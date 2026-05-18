@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+
+  --color-primary: #C8902B;
+  --color-primary-light: #C8902B1a;
+  --color-primary-hover: #B07D24;
+  --color-secondary: #10B981;
+  --color-secondary-light: #D1FAE5;
+  --color-danger: #EF4444;
+  --color-danger-light: #FEE2E2;
+
+  --color-bg-body: #0a0e1a;
+  --color-bg-card: #111827;
+
+  --color-text-main: #F9FAFB;
+  --color-text-muted: #9CA3AF;
+  --color-border-color: #1F2937;
+
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+@layer base {
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-bg-body text-text-main font-sans antialiased;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
+
+/* Override react-big-calendar for dark theme */
+.rbc-calendar { font-family: var(--font-sans); }
+.rbc-off-range-bg { background: #0d1117 !important; }
+.rbc-today { background: rgba(200, 144, 43, 0.08) !important; }
+
+/* Input/select dark overrides */
+select, input[type="date"], input[type="time"], input[type="number"], input[type="tel"], input[type="text"], textarea {
+  color-scheme: dark;
+}
