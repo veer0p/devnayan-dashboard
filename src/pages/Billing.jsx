@@ -78,8 +78,15 @@ export default function Billing() {
   const handleSubmit = (invoice, isEdit) => {
     if (isEdit) {
       setInvoices(prev => prev.map(i => i.id === invoice.id ? invoice : i));
-    } else {
-      setInvoices(prev => [invoice, ...prev]);
+      return;
+    }
+    setInvoices(prev => [invoice, ...prev]);
+    // Smooth handoff: if the new invoice still has a balance, jump straight into
+    // the payment dialog so the user doesn't have to hunt the row down.
+    // Defer one tick so the InvoiceModal can finish unmounting before the
+    // PaymentDialog opens — keeps Radix focus management happy.
+    if (invoice.amount - invoice.paid > 0) {
+      setTimeout(() => setPayingInvoice(invoice), 0);
     }
   };
 
