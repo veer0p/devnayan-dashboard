@@ -55,7 +55,7 @@ export default function Profile() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <WhatsappLogo size={20} className="text-emerald-400 shrink-0 mt-0.5" />
+              <WhatsappLogo size={20} className="text-emerald-500 shrink-0 mt-0.5" />
               <div>
                 <div className="text-xs text-text-muted font-medium mb-1">WhatsApp</div>
                 <a href="tel:+919913520707" className="text-sm font-medium hover:text-primary transition-colors">99135 20707</a>

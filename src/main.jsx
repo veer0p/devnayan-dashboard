@@ -4,11 +4,23 @@ import './index.css'
 import App from './App.jsx'
 
 import { BrowserRouter } from 'react-router-dom'
+import { Toaster } from 'sonner'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <App />
+      <Toaster
+        position="bottom-right"
+        theme="dark"
+        toastOptions={{
+          style: {
+            background: 'var(--color-bg-card)',
+            border: '1px solid var(--color-border-color)',
+            color: 'var(--color-text-main)',
+          },
+        }}
+      />
     </BrowserRouter>
   </StrictMode>,
 )

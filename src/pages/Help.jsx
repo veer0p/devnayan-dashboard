@@ -23,26 +23,25 @@ export default function Help() {
       </motion.div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-border-color rounded-xl border border-border-color overflow-hidden mb-8">
         {[
-          { icon: <Phone size={24} />, label: 'Call Support', sub: '02622-227071', color: 'text-primary', bg: 'bg-primary/10', href: 'tel:+912622227071' },
-          { icon: <WhatsappLogo size={24} weight="fill" />, label: 'WhatsApp', sub: '99135 20707', color: 'text-emerald-400', bg: 'bg-emerald-900/20', href: 'https://wa.me/919913520707' },
-          { icon: <Envelope size={24} />, label: 'Email', sub: 'sayaniachintan@gmail.com', color: 'text-blue-400', bg: 'bg-blue-900/20', href: 'mailto:sayaniachintan@gmail.com' },
+          { icon: <Phone size={18} />, label: 'Call support', sub: '+91 84870 05334', href: 'tel:+918487005334' },
+          { icon: <WhatsappLogo size={18} />, label: 'WhatsApp', sub: '+91 84870 05334', href: 'https://wa.me/918487005334' },
+          { icon: <Envelope size={18} />, label: 'Email', sub: 'atodariyaveer1331@gmail.com', href: 'mailto:atodariyaveer1331@gmail.com' },
         ].map(item => (
           <motion.a
             key={item.label}
             href={item.href}
             target={item.href.startsWith('http') ? '_blank' : undefined}
             rel="noopener noreferrer"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -2 }}
-            className="bg-bg-card border border-border-color rounded-xl p-5 flex items-center gap-4 hover:border-primary/30 transition-all cursor-pointer"
+            className="bg-bg-card p-5 flex items-center gap-4 hover:bg-bg-body transition-colors cursor-pointer"
           >
-            <div className={`w-12 h-12 rounded-xl ${item.bg} ${item.color} flex items-center justify-center`}>{item.icon}</div>
-            <div>
-              <div className="font-semibold text-sm">{item.label}</div>
-              <div className="text-xs text-text-muted">{item.sub}</div>
+            <div className="w-10 h-10 rounded-lg bg-bg-body border border-border-color text-text-muted flex items-center justify-center shrink-0">{item.icon}</div>
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-wider font-medium text-text-muted/80">{item.label}</div>
+              <div className="text-sm text-text-main truncate mt-0.5">{item.sub}</div>
             </div>
           </motion.a>
         ))}

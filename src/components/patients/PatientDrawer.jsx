@@ -1,20 +1,34 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  WhatsappLogo, 
-  Receipt, 
-  CalendarPlus, 
-  WarningCircle, 
-  Clock, 
-  Money
+import { useNavigate } from 'react-router-dom';
+import {
+  X,
+  WhatsappLogo,
+  Receipt,
+  CalendarPlus,
+  WarningCircle,
+  Clock,
+  Money,
+  PencilSimple,
+  Trash,
 } from '@phosphor-icons/react';
 import ToothChart from './ToothChart';
+import StatusBadge from '../ui/StatusBadge';
 
-export default function PatientDrawer({ patient, isOpen, onClose }) {
+export default function PatientDrawer({ patient, isOpen, onClose, onEdit, onDelete, onUpdate }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const navigate = useNavigate();
 
   if (!patient) return null;
+
+  const goBook = () => {
+    onClose();
+    navigate('/appointments', { state: { bookForPatientId: patient.id } });
+  };
+  const goInvoice = () => {
+    onClose();
+    navigate('/billing', { state: { invoiceForPatientId: patient.id } });
+  };
 
   return (
     <AnimatePresence>
@@ -35,23 +49,44 @@ export default function PatientDrawer({ patient, isOpen, onClose }) {
             className="fixed right-0 top-0 bottom-0 w-full max-w-[600px] bg-bg-card shadow-2xl z-50 flex flex-col border-l border-border-color"
           >
             {/* Header */}
-            <div className="p-6 border-b border-border-color flex justify-between items-start bg-bg-body">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-primary text-white text-xl font-bold flex items-center justify-center shadow-md shadow-primary/20">
-                  {patient.name.split(' ').map(n => n[0]).join('')}
+            <div className="p-4 sm:p-6 border-b border-border-color flex justify-between items-start gap-3 bg-bg-body">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-bg-card border border-border-color text-text-main text-base font-semibold flex items-center justify-center shrink-0">
+                  {patient.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-text-main">{patient.name}</h2>
-                  <div className="text-sm text-text-muted mt-1">{patient.phone} • {patient.age} yrs, {patient.gender}</div>
-                  <div className="text-[11px] text-text-muted mt-1 font-medium">Reg: {new Date(patient.registrationDate).toLocaleDateString()}</div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg font-semibold text-text-main truncate">{patient.name}</h2>
+                  <div className="text-sm text-text-muted mt-0.5 truncate">{patient.phone} · {patient.age} yrs, {patient.gender}</div>
+                  <div className="text-[11px] text-text-muted mt-0.5 truncate">Reg: {new Date(patient.registrationDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                 </div>
               </div>
-              <button 
-                onClick={onClose}
-                className="p-2 text-text-muted hover:text-text-main hover:bg-border-color rounded-xl transition-colors"
-              >
-                <X size={20} weight="bold" />
-              </button>
+              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                {onEdit && (
+                  <button
+                    onClick={onEdit}
+                    className="h-9 w-9 sm:w-auto sm:px-3 rounded-md bg-primary/10 border border-primary/30 text-primary/90 hover:bg-primary/20 hover:border-primary/60 hover:text-primary flex items-center justify-center sm:gap-1.5 transition-colors text-[13px] font-semibold"
+                    title="Edit patient"
+                  >
+                    <PencilSimple size={14} /> <span className="hidden sm:inline">Edit</span>
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    onClick={onDelete}
+                    className="h-9 w-9 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-400/90 hover:bg-rose-500/20 hover:border-rose-500/60 hover:text-rose-500 flex items-center justify-center transition-colors"
+                    title="Delete patient"
+                  >
+                    <Trash size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="h-9 w-9 rounded-md bg-bg-card border border-border-color text-text-muted hover:text-text-main hover:bg-bg-body flex items-center justify-center transition-colors"
+                  title="Close"
+                >
+                  <X size={16} weight="bold" />
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}
@@ -83,11 +118,11 @@ export default function PatientDrawer({ patient, isOpen, onClose }) {
                 <div className="space-y-6">
                   {/* Medical Alerts */}
                   {patient.medicalAlerts && patient.medicalAlerts.length > 0 && (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                      <WarningCircle size={20} weight="fill" className="text-red-500 shrink-0 mt-0.5" />
+                    <div className="p-3 bg-bg-body border border-border-color rounded-lg flex items-start gap-3">
+                      <span className="w-1 h-full min-h-[40px] rounded-full bg-rose-500/70 shrink-0" />
                       <div>
-                        <div className="text-sm font-bold text-red-700 mb-1">Medical Alerts</div>
-                        <div className="text-sm text-red-600 font-medium">
+                        <div className="text-[11px] uppercase tracking-wider font-semibold text-text-muted mb-1">Medical alerts</div>
+                        <div className="text-sm text-text-main">
                           {patient.medicalAlerts.join(', ')}
                         </div>
                       </div>
@@ -95,49 +130,60 @@ export default function PatientDrawer({ patient, isOpen, onClose }) {
                   )}
 
                   {/* Quick Stats Grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-bg-body border border-border-color rounded-xl flex flex-col">
-                      <div className="text-xs text-text-muted font-medium mb-1 flex items-center gap-1">
-                        <Clock size={14} /> Last Visit
+                  <div className="grid grid-cols-2 gap-px bg-border-color rounded-xl border border-border-color overflow-hidden">
+                    <div className="p-4 bg-bg-body flex flex-col">
+                      <div className="text-[11px] uppercase tracking-wider text-text-muted/80 font-medium flex items-center gap-1.5">
+                        <Clock size={11} /> Last visit
                       </div>
-                      <div className="text-lg font-bold text-text-main">
+                      <div className="mt-2 text-[18px] font-semibold tracking-tight text-text-main">
                         {new Date(patient.lastVisit).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </div>
-                      <div className="text-[11px] text-text-muted mt-auto pt-2">{patient.totalVisits} total visits</div>
+                      <div className="text-[11px] text-text-muted mt-2">{patient.totalVisits} total visits</div>
                     </div>
-                    <div className={`p-4 border rounded-xl flex flex-col ${patient.balance > 0 ? 'bg-red-50 border-red-100' : 'bg-bg-body border-border-color'}`}>
-                      <div className={`text-xs font-medium mb-1 flex items-center gap-1 ${patient.balance > 0 ? 'text-red-600' : 'text-text-muted'}`}>
-                        <Money size={14} /> Outstanding Balance
+                    <div className="p-4 bg-bg-body flex flex-col">
+                      <div className="text-[11px] uppercase tracking-wider text-text-muted/80 font-medium flex items-center gap-1.5">
+                        <Money size={11} /> Outstanding
                       </div>
-                      <div className={`text-lg font-bold ${patient.balance > 0 ? 'text-red-600' : 'text-text-main'}`}>
+                      <div className={`mt-2 text-[18px] font-semibold tracking-tight ${patient.balance > 0 ? 'text-rose-500' : 'text-text-main'}`}>
                         ₹{patient.balance.toLocaleString()}
                       </div>
-                      {patient.balance > 0 && (
-                        <button className="text-[11px] font-semibold text-red-700 hover:text-red-800 mt-auto pt-2 text-left hover:underline">
-                          Send payment link
+                      {patient.balance > 0 ? (
+                        <button
+                          onClick={() => window.open(`https://wa.me/${patient.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${patient.name}, your outstanding balance at Devnayan Dental Clinic is ₹${patient.balance.toLocaleString()}. Please settle at your convenience.`)}`, '_blank')}
+                          className="text-[11px] font-medium text-text-muted hover:text-text-main mt-2 text-left transition-colors"
+                        >
+                          Send payment link →
                         </button>
+                      ) : (
+                        <div className="text-[11px] text-text-muted mt-2">No dues</div>
                       )}
                     </div>
                   </div>
 
                   {/* Action Buttons */}
                   <div>
-                    <h3 className="text-sm font-semibold text-text-muted mb-3 uppercase tracking-wide">Quick Actions</h3>
-                    <div className="grid grid-cols-3 gap-3">
-                      <button className="flex flex-col items-center justify-center p-4 bg-bg-body border border-border-color rounded-xl hover:border-primary hover:text-primary transition-all group">
-                        <CalendarPlus size={24} className="text-text-muted group-hover:text-primary mb-2 transition-colors" />
-                        <span className="text-[11px] font-bold">Book</span>
-                      </button>
-                      <button 
-                        onClick={() => window.open(`https://wa.me/${patient.phone.replace(/[^0-9]/g, '')}`, '_blank')}
-                        className="flex flex-col items-center justify-center p-4 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition-all group"
+                    <div className="text-[11px] uppercase tracking-wider font-medium text-text-muted/80 mb-3">Quick actions</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={goBook}
+                        className="flex items-center justify-center gap-2 p-3 bg-bg-body border border-border-color rounded-lg hover:border-text-muted/40 hover:bg-bg-card transition-all"
                       >
-                        <WhatsappLogo size={24} className="text-green-600 mb-2 transition-colors" />
-                        <span className="text-[11px] font-bold text-green-700">WhatsApp</span>
+                        <CalendarPlus size={14} className="text-text-muted" />
+                        <span className="text-[12px] font-medium text-text-main">Book</span>
                       </button>
-                      <button className="flex flex-col items-center justify-center p-4 bg-bg-body border border-border-color rounded-xl hover:border-primary hover:text-primary transition-all group">
-                        <Receipt size={24} className="text-text-muted group-hover:text-primary mb-2 transition-colors" />
-                        <span className="text-[11px] font-bold">Invoice</span>
+                      <button
+                        onClick={() => window.open(`https://wa.me/${patient.phone.replace(/[^0-9]/g, '')}`, '_blank')}
+                        className="flex items-center justify-center gap-2 p-3 bg-bg-body border border-border-color rounded-lg hover:border-text-muted/40 hover:bg-bg-card transition-all"
+                      >
+                        <WhatsappLogo size={14} className="text-text-muted" />
+                        <span className="text-[12px] font-medium text-text-main">WhatsApp</span>
+                      </button>
+                      <button
+                        onClick={goInvoice}
+                        className="flex items-center justify-center gap-2 p-3 bg-bg-body border border-border-color rounded-lg hover:border-text-muted/40 hover:bg-bg-card transition-all"
+                      >
+                        <Receipt size={14} className="text-text-muted" />
+                        <span className="text-[12px] font-medium text-text-main">Invoice</span>
                       </button>
                     </div>
                   </div>
@@ -161,11 +207,9 @@ export default function PatientDrawer({ patient, isOpen, onClose }) {
                           </div>
                           <div className="text-right">
                             <div className="font-bold text-text-main">₹{record.cost.toLocaleString()}</div>
-                            <span className={`inline-block px-2 py-0.5 mt-1 text-[10px] font-bold rounded ${
-                              record.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {record.status}
-                            </span>
+                            <div className="mt-1">
+                              <StatusBadge status={record.status} size="xs" />
+                            </div>
                           </div>
                         </div>
                         {record.notes && (
@@ -188,9 +232,13 @@ export default function PatientDrawer({ patient, isOpen, onClose }) {
               {activeTab === 'chart' && (
                 <div>
                   <div className="mb-4">
-                    <p className="text-sm text-text-muted">FDI notation tooth chart. Hover over a tooth to see its condition.</p>
+                    <p className="text-sm text-text-muted">FDI notation tooth chart. Click a tooth to update its condition; hover to see the name.</p>
                   </div>
-                  <ToothChart conditions={patient.teethConditions || {}} />
+                  <ToothChart
+                    conditions={patient.teethConditions || {}}
+                    editable={!!onUpdate}
+                    onChange={(updated) => onUpdate?.({ ...patient, teethConditions: updated })}
+                  />
                 </div>
               )}
 

@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
-import { List, X } from '@phosphor-icons/react';
+import GlobalSearch from './GlobalSearch';
+import ThemeToggle from '../ui/ThemeToggle';
+import { List, X, MagnifyingGlass } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function AppLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setMobileSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
-    <div className="flex w-full h-screen p-2 md:p-3 gap-3 bg-bg-body overflow-hidden">
+    <div className="flex w-full h-screen p-2 md:p-3 pb-[68px] xl:pb-3 gap-3 bg-bg-body overflow-hidden">
       {/* Desktop Sidebar */}
       <div className="hidden xl:block">
         <Sidebar />
@@ -49,7 +63,16 @@ export default function AppLayout({ children }) {
               <List size={22} weight="bold" />
             </button>
             <span className="font-bold text-lg text-primary">Devnayan</span>
-            <div className="w-10" /> {/* Spacer */}
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              <button
+                onClick={() => setMobileSearchOpen(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full border border-border-color text-text-main hover:bg-bg-body transition-colors"
+                title="Search"
+              >
+                <MagnifyingGlass size={16} weight="bold" />
+              </button>
+            </div>
           </div>
           <div className="hidden xl:block">
             <TopBar />
@@ -57,6 +80,9 @@ export default function AppLayout({ children }) {
           {children}
         </div>
       </main>
+
+      {/* Mobile/global search (Cmd+K works on all screens) */}
+      <GlobalSearch isOpen={mobileSearchOpen} onClose={() => setMobileSearchOpen(false)} />
     </div>
   );
 }

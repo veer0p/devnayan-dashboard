@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import {
   CaretDoubleLeft,
@@ -8,7 +7,7 @@ import {
   ShoppingCart,
   Users,
   ChatCircleDots,
-  User,
+  Stethoscope,
   ChatTeardrop,
   SignOut,
   Tooth,
@@ -22,30 +21,35 @@ const menuMain = [
   { label: 'Patients', icon: Users, path: '/patients' },
   { label: 'Billing', icon: ShoppingCart, path: '/billing' },
   { label: 'Inventory', icon: Package, path: '/inventory' },
+  { label: 'Doctors', icon: Stethoscope, path: '/doctors' },
 ];
 
 const menuFooter = [
-  { label: 'Clinic Profile', icon: User, path: '/profile' },
   { label: 'Help', icon: ChatTeardrop, path: '/help' },
 ];
 
 const MenuItem = ({ item, isActive, onClick }) => {
   const Icon = item.icon;
   const content = (
-    <motion.li
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+    <li
       onClick={onClick}
       className={clsx(
-        "flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors cursor-pointer text-sm font-medium",
+        'relative flex items-center gap-3 px-3 py-2.5 rounded-md mb-0.5 transition-colors cursor-pointer text-[13px]',
         isActive
-          ? "bg-primary/15 text-primary font-semibold border-l-4 border-primary"
-          : "text-text-muted hover:bg-primary/10 hover:text-primary"
+          ? 'bg-primary/15 text-text-main font-semibold'
+          : 'text-text-muted hover:bg-bg-body hover:text-text-main'
       )}
     >
-      <Icon size={20} weight={isActive ? "fill" : "regular"} />
+      {isActive && (
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary" />
+      )}
+      <Icon
+        size={18}
+        weight={isActive ? 'fill' : 'regular'}
+        className={isActive ? 'text-primary' : ''}
+      />
       {item.label}
-    </motion.li>
+    </li>
   );
 
   return item.path ? <Link to={item.path}>{content}</Link> : content;
@@ -93,11 +97,11 @@ export default function Sidebar({ onClose }) {
 
       <div className="p-4 border-t border-border-color space-y-3">
         <div className="flex items-center gap-2.5 p-2.5 border border-border-color rounded-xl cursor-pointer hover:bg-bg-body transition-colors">
-          <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center text-sm">
-            DC
+          <div className="w-8 h-8 rounded-md bg-bg-body border border-border-color text-text-main font-semibold flex items-center justify-center text-xs">
+            CS
           </div>
           <div className="text-[13px] font-medium text-text-main flex-1">Dr. Chintan</div>
-          <SignOut size={18} className="text-text-muted" />
+          <SignOut size={16} className="text-text-muted" />
         </div>
         <p className="text-[10px] text-text-muted text-center">
           Powered by{" "}

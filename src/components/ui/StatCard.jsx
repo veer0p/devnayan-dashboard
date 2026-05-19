@@ -53,7 +53,7 @@ export const Badge = ({ children, variant = 'green', className }) => {
   return (
     <span className={clsx(
       "px-2 py-0.5 rounded text-[10px] font-medium inline-flex items-center gap-1",
-      variant === 'green' ? "bg-emerald-900/40 text-emerald-400" : "bg-red-900/40 text-red-400",
+      variant === 'green' ? "bg-emerald-500/15 text-emerald-600" : "bg-rose-500/15 text-rose-500",
       className
     )}>
       {children}

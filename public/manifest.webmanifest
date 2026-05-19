@@ -1,0 +1,14 @@
+{
+  "name": "Devnayan Dental Clinic",
+  "short_name": "Devnayan",
+  "description": "Dental clinic management — appointments, patients, invoices and inventory.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#C8902B",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

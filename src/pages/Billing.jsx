@@ -1,47 +1,120 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, MagnifyingGlass, Receipt, WhatsappLogo, Eye, CaretDown, Check, Clock, Warning } from '@phosphor-icons/react';
+import { Plus, MagnifyingGlass, WhatsappLogo, Eye, PencilSimple, Trash, Wallet } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 import AppLayout from '../components/layout/AppLayout';
+import Select from '../components/ui/Select';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import StatusBadge from '../components/ui/StatusBadge';
+import InvoiceModal from '../components/billing/InvoiceModal';
+import InvoiceDrawer from '../components/billing/InvoiceDrawer';
+import InvoiceTemplate from '../components/billing/InvoiceTemplate';
+import PaymentDialog from '../components/billing/PaymentDialog';
+import { mockInvoices, invoiceStatuses, nextInvoiceId, deriveStatus } from '../data/billing';
+import { mockPatientsList } from '../data/patients';
+import { useLocalStorage } from '../lib/useLocalStorage';
 
-const invoices = [
-  { id: 'INV-001', patient: 'Aarav Patel', treatment: 'General Consultation', date: '2026-05-10', amount: 500, paid: 500, status: 'Paid' },
-  { id: 'INV-002', patient: 'Diya Sharma', treatment: 'Crown Preparation', date: '2026-05-01', amount: 5000, paid: 2500, status: 'Partial' },
-  { id: 'INV-003', patient: 'Rohan Gupta', treatment: 'Extraction + Follow-up', date: '2025-11-15', amount: 2000, paid: 2000, status: 'Paid' },
-  { id: 'INV-004', patient: 'Ananya Singh', treatment: 'Emergency Consultation', date: '2024-03-12', amount: 800, paid: 800, status: 'Paid' },
-  { id: 'INV-005', patient: 'Kabir Kumar', treatment: 'General Consultation', date: '2026-05-10', amount: 500, paid: 0, status: 'Unpaid' },
-  { id: 'INV-006', patient: 'Meera Desai', treatment: 'Teeth Whitening', date: '2026-04-20', amount: 3500, paid: 3500, status: 'Paid' },
-  { id: 'INV-007', patient: 'Vikram Joshi', treatment: 'Root Canal', date: '2026-05-05', amount: 8000, paid: 4000, status: 'Partial' },
-  { id: 'INV-008', patient: 'Priya Nair', treatment: 'Cleaning & Polishing', date: '2026-05-12', amount: 1200, paid: 0, status: 'Unpaid' },
+const filterOptions = [
+  { value: 'All', label: 'All Status' },
+  ...invoiceStatuses.map(s => ({ value: s, label: s })),
 ];
-
-const stats = [
-  { label: 'Total Revenue', value: '₹21,500', sub: 'This month', color: 'text-primary' },
-  { label: 'Collected', value: '₹13,300', sub: '61.8%', color: 'text-emerald-400' },
-  { label: 'Pending', value: '₹8,200', sub: '3 invoices', color: 'text-amber-400' },
-  { label: 'Overdue', value: '₹500', sub: '1 invoice', color: 'text-red-400' },
-];
-
-const statusStyle = {
-  Paid: 'bg-emerald-900/30 text-emerald-400',
-  Partial: 'bg-amber-900/30 text-amber-400',
-  Unpaid: 'bg-red-900/30 text-red-400',
-};
-
-const statusIcon = {
-  Paid: <Check size={12} weight="bold" />,
-  Partial: <Clock size={12} weight="bold" />,
-  Unpaid: <Warning size={12} weight="bold" />,
-};
 
 export default function Billing() {
+  const [invoices, setInvoices] = useLocalStorage('invoices', mockInvoices);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [defaultPatientId, setDefaultPatientId] = useState(null);
+  const [viewingInvoice, setViewingInvoice] = useState(null);
+  const [deletingInvoice, setDeletingInvoice] = useState(null);
+  const [fullInvoice, setFullInvoice] = useState(null);
+  const [payingInvoice, setPayingInvoice] = useState(null);
+
+  // Honor inbound "New invoice for this patient" intent (from Patient drawer)
+  const location = useLocation();
+  useEffect(() => {
+    if (location.state?.invoiceForPatientId) {
+      setDefaultPatientId(location.state.invoiceForPatientId);
+      setEditingInvoice(null);
+      setIsModalOpen(true);
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
 
   const filtered = invoices.filter(inv => {
     const matchSearch = inv.patient.toLowerCase().includes(search.toLowerCase()) || inv.id.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'All' || inv.status === filter;
     return matchSearch && matchFilter;
   });
+
+  const stats = useMemo(() => {
+    const total = invoices.reduce((s, i) => s + i.amount, 0);
+    const collected = invoices.reduce((s, i) => s + i.paid, 0);
+    const pending = invoices.filter(i => i.status === 'Partial').reduce((s, i) => s + (i.amount - i.paid), 0);
+    const overdue = invoices.filter(i => i.status === 'Unpaid').reduce((s, i) => s + i.amount, 0);
+    const collectedPct = total > 0 ? Math.round((collected / total) * 100) : 0;
+    return [
+      { label: 'Total billed',   value: `₹${total.toLocaleString()}`,     sub: `${invoices.length} invoices`, accent: true },
+      { label: 'Collected',      value: `₹${collected.toLocaleString()}`, sub: `${collectedPct}% of total` },
+      { label: 'Partial',        value: `₹${pending.toLocaleString()}`,   sub: `${invoices.filter(i => i.status === 'Partial').length} pending` },
+      { label: 'Unpaid',         value: `₹${overdue.toLocaleString()}`,   sub: `${invoices.filter(i => i.status === 'Unpaid').length} overdue` },
+    ];
+  }, [invoices]);
+
+  const openAdd = () => {
+    setEditingInvoice(null);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (inv) => {
+    setEditingInvoice(inv);
+    setIsModalOpen(true);
+    setViewingInvoice(null);
+  };
+
+  const handleSubmit = (invoice, isEdit) => {
+    if (isEdit) {
+      setInvoices(prev => prev.map(i => i.id === invoice.id ? invoice : i));
+    } else {
+      setInvoices(prev => [invoice, ...prev]);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!deletingInvoice) return;
+    setInvoices(prev => prev.filter(i => i.id !== deletingInvoice.id));
+    toast.success(`${deletingInvoice.id} deleted`);
+    setViewingInvoice(null);
+    setDeletingInvoice(null);
+  };
+
+  const handlePayment = ({ amount }) => {
+    if (!payingInvoice) return;
+    setInvoices(prev => prev.map(inv => {
+      if (inv.id !== payingInvoice.id) return inv;
+      const newPaid = Math.min(inv.amount, inv.paid + amount);
+      const updated = { ...inv, paid: newPaid, status: deriveStatus(inv.amount, newPaid) };
+      // Sync viewing drawer if open
+      if (viewingInvoice?.id === inv.id) setViewingInvoice(updated);
+      setPayingInvoice(updated);
+      return updated;
+    }));
+  };
+
+  const sendWhatsApp = (inv) => {
+    const patient = mockPatientsList.find(p => p.id === inv.patientId);
+    if (!patient?.phone) {
+      toast.error('No phone number on record');
+      return;
+    }
+    const balance = Math.max(0, inv.amount - inv.paid);
+    const phone = patient.phone.replace(/[^0-9]/g, '');
+    const message = `Hello ${inv.patient},\n\nInvoice ${inv.id} from Devnayan Dental Clinic.\n${inv.treatment} - ₹${inv.amount.toLocaleString()}\nPaid: ₹${inv.paid.toLocaleString()} | Balance: ₹${balance.toLocaleString()}\n\nThank you.`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   return (
     <AppLayout>
@@ -51,35 +124,33 @@ export default function Billing() {
           <p className="text-text-muted text-sm">Manage invoices and payments</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-          <button className="h-10 px-4 rounded-xl bg-primary text-white flex items-center gap-2 text-sm font-medium hover:bg-primary-hover transition-colors shadow-sm">
+          <button
+            onClick={openAdd}
+            className="h-10 px-4 rounded-xl bg-primary text-white flex items-center gap-2 text-sm font-medium hover:bg-primary-hover transition-colors shadow-sm"
+          >
             <Plus size={16} weight="bold" /> New Invoice
           </button>
         </motion.div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border-color rounded-xl border border-border-color overflow-hidden mb-6">
         {stats.map(s => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-bg-card border border-border-color rounded-xl p-4"
-          >
-            <div className="text-xs text-text-muted font-medium mb-1">{s.label}</div>
-            <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-            <div className="text-[11px] text-text-muted mt-1">{s.sub}</div>
-          </motion.div>
+          <div key={s.label} className="bg-bg-card p-4">
+            <div className="text-[11px] uppercase tracking-wider text-text-muted/80 font-medium">{s.label}</div>
+            <div className={`mt-2 text-[24px] leading-none font-semibold tracking-tight ${s.accent ? 'text-primary' : 'text-text-main'}`}>
+              {s.value}
+            </div>
+            <div className="text-[11px] text-text-muted mt-2">{s.sub}</div>
+          </div>
         ))}
       </div>
 
-      {/* Table */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-bg-card border border-border-color rounded-2xl shadow-sm"
       >
-        {/* Toolbar */}
         <div className="p-4 border-b border-border-color flex flex-col sm:flex-row gap-3 items-center justify-between">
           <div className="relative w-full sm:w-72">
             <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -91,16 +162,13 @@ export default function Billing() {
               className="w-full h-9 pl-9 pr-3 text-sm bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary transition-all"
             />
           </div>
-          <select
+          <Select
             value={filter}
-            onChange={e => setFilter(e.target.value)}
-            className="h-9 px-3 bg-bg-card border border-border-color rounded-lg text-sm focus:outline-none cursor-pointer"
-          >
-            <option value="All">All Status</option>
-            <option value="Paid">Paid</option>
-            <option value="Partial">Partial</option>
-            <option value="Unpaid">Unpaid</option>
-          </select>
+            onChange={setFilter}
+            options={filterOptions}
+            className="w-full sm:w-44"
+            size="md"
+          />
         </div>
 
         {/* Desktop table */}
@@ -120,25 +188,58 @@ export default function Billing() {
             </thead>
             <tbody>
               {filtered.map(inv => (
-                <tr key={inv.id} className="border-b border-border-color last:border-0 hover:bg-bg-body/50 transition-colors cursor-pointer">
-                  <td className="py-3 pl-4 font-mono text-xs text-primary font-semibold">{inv.id}</td>
-                  <td className="py-3 font-medium">{inv.patient}</td>
+                <tr
+                  key={inv.id}
+                  onClick={() => setViewingInvoice(inv)}
+                  className="border-b border-border-color last:border-0 hover:bg-white/[0.03] transition-colors cursor-pointer"
+                >
+                  <td className="py-3 pl-4 font-mono text-[12px] text-text-muted">{inv.id}</td>
+                  <td className="py-3 font-medium text-text-main">{inv.patient}</td>
                   <td className="py-3 text-text-muted">{inv.treatment}</td>
-                  <td className="py-3 text-text-muted">{new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                  <td className="py-3 font-semibold">₹{inv.amount.toLocaleString()}</td>
-                  <td className="py-3 font-medium text-emerald-400">₹{inv.paid.toLocaleString()}</td>
+                  <td className="py-3 text-text-muted text-[12px]">{new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                  <td className="py-3 font-semibold tabular-nums text-text-main">₹{inv.amount.toLocaleString()}</td>
+                  <td className="py-3 font-medium tabular-nums text-text-muted">₹{inv.paid.toLocaleString()}</td>
                   <td className="py-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${statusStyle[inv.status]}`}>
-                      {statusIcon[inv.status]} {inv.status}
-                    </span>
+                    <StatusBadge status={inv.status} />
                   </td>
                   <td className="py-3 pr-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition-colors" title="View">
-                        <Eye size={16} />
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setViewingInvoice(inv); }}
+                        className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/30 text-primary/80 shadow-sm hover:bg-primary/20 hover:border-primary/60 hover:text-primary flex items-center justify-center transition-colors"
+                        title="View invoice"
+                      >
+                        <Eye size={14} />
                       </button>
-                      <button className="p-1.5 text-text-muted hover:text-green-400 hover:bg-green-900/20 rounded transition-colors" title="Send via WhatsApp">
-                        <WhatsappLogo size={16} />
+                      {inv.status !== 'Paid' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setPayingInvoice(inv); }}
+                          title="Take payment"
+                          className="h-8 px-2.5 rounded-md bg-primary/10 border border-primary/40 text-primary hover:bg-primary/20 flex items-center justify-center gap-1 transition-colors text-[11px] font-semibold"
+                        >
+                          <Wallet size={13} /> Pay
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEdit(inv); }}
+                        className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/30 text-primary/80 shadow-sm hover:bg-primary/20 hover:border-primary/60 hover:text-primary flex items-center justify-center transition-colors"
+                        title="Edit invoice"
+                      >
+                        <PencilSimple size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); sendWhatsApp(inv); }}
+                        className="h-8 w-8 rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366]/80 shadow-sm hover:bg-[#25D366]/20 hover:border-[#25D366]/60 hover:text-[#25D366] flex items-center justify-center transition-colors"
+                        title="Send via WhatsApp"
+                      >
+                        <WhatsappLogo size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeletingInvoice(inv); }}
+                        className="h-8 w-8 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400/80 shadow-sm hover:bg-rose-500/20 hover:border-rose-500/60 hover:text-rose-500 flex items-center justify-center transition-colors"
+                        title="Delete invoice"
+                      >
+                        <Trash size={14} />
                       </button>
                     </div>
                   </td>
@@ -146,30 +247,35 @@ export default function Billing() {
               ))}
             </tbody>
           </table>
+          {filtered.length === 0 && (
+            <div className="py-12 text-center text-text-muted">No invoices match your search.</div>
+          )}
         </div>
 
         {/* Mobile cards */}
         <div className="md:hidden p-3 space-y-3">
           {filtered.map(inv => (
-            <div key={inv.id} className="bg-bg-body border border-border-color rounded-xl p-4">
+            <div
+              key={inv.id}
+              onClick={() => setViewingInvoice(inv)}
+              className="bg-bg-body border border-border-color rounded-xl p-4 cursor-pointer active:bg-border-color/30 transition-all"
+            >
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="font-semibold text-text-main">{inv.patient}</div>
                   <div className="text-xs text-text-muted mt-0.5">{inv.treatment}</div>
                 </div>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${statusStyle[inv.status]}`}>
-                  {statusIcon[inv.status]} {inv.status}
-                </span>
+                <StatusBadge status={inv.status} size="xs" />
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div>
-                  <span className="text-text-muted text-xs">{inv.id}</span>
-                  <span className="text-text-muted text-xs mx-2">•</span>
+                  <span className="text-text-muted text-xs font-mono">{inv.id}</span>
+                  <span className="text-text-muted text-xs mx-2">·</span>
                   <span className="text-text-muted text-xs">{new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-text-main">₹{inv.amount.toLocaleString()}</span>
-                  {inv.status !== 'Paid' && <span className="text-xs text-emerald-400 ml-2">(₹{inv.paid} paid)</span>}
+                  <span className="font-semibold text-text-main tabular-nums">₹{inv.amount.toLocaleString()}</span>
+                  {inv.status !== 'Paid' && <span className="text-xs text-text-muted ml-2">({Math.round((inv.paid / inv.amount) * 100)}% paid)</span>}
                 </div>
               </div>
             </div>
@@ -177,6 +283,48 @@ export default function Billing() {
           {filtered.length === 0 && <div className="py-12 text-center text-text-muted">No invoices found.</div>}
         </div>
       </motion.div>
+
+      <InvoiceModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setEditingInvoice(null); setDefaultPatientId(null); }}
+        onSubmit={handleSubmit}
+        initialInvoice={editingInvoice}
+        nextId={nextInvoiceId(invoices)}
+        defaultPatientId={defaultPatientId}
+      />
+
+      <InvoiceDrawer
+        invoice={viewingInvoice}
+        isOpen={!!viewingInvoice}
+        onClose={() => setViewingInvoice(null)}
+        onEdit={() => openEdit(viewingInvoice)}
+        onDelete={() => setDeletingInvoice(viewingInvoice)}
+        onViewFull={() => setFullInvoice(viewingInvoice)}
+        onTakePayment={() => setPayingInvoice(viewingInvoice)}
+      />
+
+      <InvoiceTemplate
+        invoice={fullInvoice}
+        isOpen={!!fullInvoice}
+        onClose={() => setFullInvoice(null)}
+      />
+
+      <PaymentDialog
+        invoice={payingInvoice}
+        isOpen={!!payingInvoice}
+        onClose={() => setPayingInvoice(null)}
+        onPayment={handlePayment}
+      />
+
+      <ConfirmDialog
+        isOpen={!!deletingInvoice}
+        onClose={() => setDeletingInvoice(null)}
+        onConfirm={handleDelete}
+        title="Delete this invoice?"
+        description={deletingInvoice ? `Invoice ${deletingInvoice.id} for ${deletingInvoice.patient} (₹${deletingInvoice.amount.toLocaleString()}) will be permanently removed.` : ''}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </AppLayout>
   );
 }

@@ -17,7 +17,8 @@
 
   --color-text-main: #F9FAFB;
   --color-text-muted: #9CA3AF;
-  --color-border-color: #1F2937;
+  --color-border-color: #252e42;
+  --color-border-strong: #303a52;
 
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -25,6 +26,20 @@
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Light theme token overrides — toggled via <html data-theme="light"> */
+[data-theme="light"] {
+  --color-bg-body: #f4f5f8;
+  --color-bg-card: #ffffff;
+
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border-color: #e4e7ec;
+  --color-border-strong: #cbd2da;
+
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 8px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
 }
 
 @layer base {
@@ -45,7 +60,7 @@
   }
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar — dark default */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -56,19 +71,65 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-700 rounded-full;
+  background: #374151;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-600;
+  background: #4b5563;
 }
 
-/* Override react-big-calendar for dark theme */
+/* Scrollbar — light variant */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Override react-big-calendar */
 .rbc-calendar { font-family: var(--font-sans); }
-.rbc-off-range-bg { background: #0d1117 !important; }
+.rbc-off-range-bg { background: rgba(0, 0, 0, 0.04) !important; }
+[data-theme="light"] .rbc-off-range-bg { background: rgba(0, 0, 0, 0.02) !important; }
 .rbc-today { background: rgba(200, 144, 43, 0.08) !important; }
 
-/* Input/select dark overrides */
+/* Input/select color scheme — follow theme */
 select, input[type="date"], input[type="time"], input[type="number"], input[type="tel"], input[type="text"], textarea {
   color-scheme: dark;
+}
+[data-theme="light"] select,
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="time"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] input[type="tel"],
+[data-theme="light"] input[type="text"],
+[data-theme="light"] textarea {
+  color-scheme: light;
+}
+
+/* Print rules — only show invoice paper */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body.printing-invoice {
+    background: white !important;
+    color: black !important;
+  }
+  body.printing-invoice > * {
+    visibility: hidden;
+  }
+  body.printing-invoice .invoice-paper,
+  body.printing-invoice .invoice-paper * {
+    visibility: visible;
+  }
+  body.printing-invoice .invoice-paper {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
 }
