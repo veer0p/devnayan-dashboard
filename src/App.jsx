@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Appointments from './pages/Appointments';
@@ -14,6 +14,15 @@ import MobileBottomNav from './components/layout/MobileBottomNav';
 function App() {
   const location = useLocation();
   const isPublicPay = location.pathname.startsWith('/pay/');
+
+  useEffect(() => {
+    const doctorsStr = localStorage.getItem('doctors');
+    if (doctorsStr && doctorsStr.includes('${clinic.doctorName}')) {
+      localStorage.removeItem('doctors');
+      localStorage.removeItem('patients');
+      window.location.reload();
+    }
+  }, []);
 
   return (
     <>
