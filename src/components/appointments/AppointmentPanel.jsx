@@ -2,9 +2,11 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, WhatsappLogo, Phone, Calendar, Clock, PencilSimple, Trash, Stethoscope } from '@phosphor-icons/react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { mockPatientsList } from '../../data/patients';
 import { mockDoctors } from '../../data/doctors';
 import { useLocalStorage } from '../../lib/useLocalStorage';
+import { sendWhatsAppMessage } from '../../lib/openwa';
 import StatusBadge from '../ui/StatusBadge';
 
 export default function AppointmentPanel({ event, isOpen, onClose, onEdit, onDelete }) {
@@ -17,11 +19,47 @@ export default function AppointmentPanel({ event, isOpen, onClose, onEdit, onDel
   const doctor = doctors.find(d => d.id === event.doctorId);
   const phoneClean = patient?.phone?.replace(/[^0-9]/g, '');
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!phoneClean) return;
     const startDate = event.start instanceof Date ? event.start : new Date(event.start);
-    const msg = `Hi ${event.patientName}, this is a reminder for your ${event.treatmentName} appointment on ${format(startDate, 'EEE d MMM')} at ${format(startDate, 'h:mm a')} at Devnayan Dental Clinic.${doctor ? `\nDoctor: ${doctor.name}` : ''}`;
-    window.open(`https://wa.me/${phoneClean}?text=${encodeURIComponent(msg)}`, '_blank');
+    const endDate = event.end instanceof Date ? event.end : new Date(event.end);
+    
+    const boldMessage = [
+      `*Appointment Reminder* 📅`,
+      `*Devnayan Dental Clinic* 🦷`,
+      `-----------------------------`,
+      `Dear *${event.patientName}*,`,
+      ``,
+      `This is a friendly reminder for your upcoming dental visit:`,
+      ``,
+      `🦷 *Treatment:* ${event.treatmentName}`,
+      `📅 *Date:* ${format(startDate, 'EEEE, d MMMM yyyy')}`,
+      `⏰ *Time:* ${format(startDate, 'h:mm a')} – ${format(endDate, 'h:mm a')}`,
+      doctor ? `👨‍⚕️ *Doctor:* ${doctor.name}` : '',
+      event.chairId ? `💺 *Dental Chair:* Chair ${event.chairId}` : '',
+      ``,
+      `📍 *Location:* Lal Bahadur Shastri Rd, Rushikesh Nagar, Bardoli`,
+      `-----------------------------`,
+      `If you need to reschedule or have any questions, please contact us at +91 84870 05334.`,
+      ``,
+      `We look forward to seeing you soon!`,
+    ].filter(Boolean).join('\n');
+    
+    const toastId = toast.loading('Sending reminder via WhatsApp...');
+    try {
+      const res = await sendWhatsAppMessage(patient.phone, boldMessage);
+      if (res.success) {
+        if (res.manual) {
+          toast.success('Opened manual WhatsApp link', { id: toastId });
+        } else {
+          toast.success('Reminder sent via WhatsApp API!', { id: toastId });
+        }
+      } else if (res.cancelled) {
+        toast.dismiss(toastId);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to send WhatsApp reminder', { id: toastId });
+    }
   };
 
   const start = event.start instanceof Date ? event.start : new Date(event.start);
@@ -87,17 +125,11 @@ export default function AppointmentPanel({ event, isOpen, onClose, onEdit, onDel
                   </div>
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={handleWhatsApp}
-                    disabled={!phoneClean}
-                    className="flex-1 h-10 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <WhatsappLogo size={16} weight="fill" /> Reminder
-                  </button>
                   {phoneClean && (
                     <a
                       href={`tel:${phoneClean}`}
-                      className="w-10 h-10 rounded-xl border border-border-color text-text-main hover:bg-bg-body flex items-center justify-center transition-colors"
+                      className="w-10 h-10 rounded-xl border border-border-color text-text-main hover:bg-bg-body flex items-center justify-center transition-colors shrink-0"
+                      title="Call patient"
                     >
                       <Phone size={16} />
                     </a>
@@ -134,19 +166,31 @@ export default function AppointmentPanel({ event, isOpen, onClose, onEdit, onDel
             </div>
           </div>
 
-          <div className="p-6 pt-4 border-t border-border-color flex justify-between gap-3">
+          <div className="p-6 pt-4 border-t border-border-color flex flex-col gap-3">
+            {/* Primary WhatsApp Action */}
             <button
-              onClick={onDelete}
-              className="h-10 px-4 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-400/90 hover:bg-rose-500/20 hover:border-rose-500/60 hover:text-rose-500 transition-colors flex items-center gap-2 text-sm font-semibold"
+              onClick={handleWhatsApp}
+              disabled={!phoneClean}
+              className="w-full h-12 rounded-xl bg-[#25D366] text-white hover:bg-[#1ebe5d] active:scale-[0.98] font-bold text-base flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-[#25D366]/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              <Trash size={14} /> Delete
+              <WhatsappLogo size={20} weight="fill" />
+              Send Appointment Details on WhatsApp
             </button>
-            <button
-              onClick={onEdit}
-              className="h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors flex items-center gap-2 shadow-sm"
-            >
-              <PencilSimple size={14} /> Edit details
-            </button>
+            {/* Secondary actions */}
+            <div className="flex gap-2">
+              <button
+                onClick={onDelete}
+                className="h-10 px-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400/90 hover:bg-rose-500/20 hover:border-rose-500/60 hover:text-rose-500 transition-colors flex items-center gap-2 text-sm font-semibold"
+              >
+                <Trash size={14} /> Delete
+              </button>
+              <button
+                onClick={onEdit}
+                className="flex-1 h-10 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                <PencilSimple size={14} /> Edit Details
+              </button>
+            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

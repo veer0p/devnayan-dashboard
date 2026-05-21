@@ -6,6 +6,7 @@ import StatusBadge from '../ui/StatusBadge';
 import { mockPatientsList } from '../../data/patients';
 import { mockDoctors } from '../../data/doctors';
 import { useLocalStorage } from '../../lib/useLocalStorage';
+import { sendWhatsAppMessage } from '../../lib/openwa';
 
 export default function InvoiceDrawer({ invoice, isOpen, onClose, onEdit, onDelete, onViewFull, onTakePayment }) {
   const [patients] = useLocalStorage('patients', mockPatientsList);
@@ -16,14 +17,28 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onEdit, onDele
   const doctor = doctors.find(d => d.id === invoice.doctorId);
   const balance = Math.max(0, invoice.amount - invoice.paid);
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!patient?.phone) {
       toast.error('No phone number on record for this patient');
       return;
     }
-    const phone = patient.phone.replace(/[^0-9]/g, '');
     const message = `Hello ${invoice.patient},\n\nThis is your invoice ${invoice.id} from Devnayan Dental Clinic.\n\nTreatment: ${invoice.treatment}\nDate: ${new Date(invoice.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}\nTotal: ₹${invoice.amount.toLocaleString()}\nPaid: ₹${invoice.paid.toLocaleString()}\nBalance: ₹${balance.toLocaleString()}\n\nThank you.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    
+    const toastId = toast.loading('Sharing invoice details...');
+    try {
+      const res = await sendWhatsAppMessage(patient.phone, message);
+      if (res.success) {
+        if (res.manual) {
+          toast.success('Opened manual WhatsApp link', { id: toastId });
+        } else {
+          toast.success('Invoice shared via WhatsApp API!', { id: toastId });
+        }
+      } else if (res.cancelled) {
+        toast.dismiss(toastId);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to share invoice', { id: toastId });
+    }
   };
 
   return (

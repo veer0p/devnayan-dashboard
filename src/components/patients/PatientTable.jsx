@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { WhatsappLogo, PencilSimple, Trash, Phone, CaretRight } from '@phosphor-icons/react';
 import StatusBadge from '../ui/StatusBadge';
+import WhatsAppMessageDialog from '../ui/WhatsAppMessageDialog';
 
 export default function PatientTable({ patients, onRowClick, onEdit, onDelete }) {
+  const [waPatient, setWaPatient] = useState(null); // patient to message via dialog
+
+  const defaultMessage = (patient) => [
+    `Dear ${patient.name},`,
+    ``,
+    `Thank you for visiting Devnayan Dental Clinic.`,
+    ``,
+    `We hope your treatment is going well. Please do not hesitate to reach out if you have any questions or concerns.`,
+    ``,
+    `Regards,`,
+    `Devnayan Dental Clinic`,
+    `+91 84870 05334`,
+  ].join('\n');
+
   if (patients.length === 0) {
     return (
       <div className="py-12 text-center text-text-muted">
@@ -69,9 +84,9 @@ export default function PatientTable({ patients, onRowClick, onEdit, onDelete })
                       <PencilSimple size={14} />
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/${patient.phone.replace(/[^0-9]/g, '')}`, '_blank'); }}
+                      onClick={(e) => { e.stopPropagation(); setWaPatient(patient); }}
                       className="h-8 w-8 rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366]/80 shadow-sm hover:bg-[#25D366]/20 hover:border-[#25D366]/60 hover:text-[#25D366] flex items-center justify-center transition-colors"
-                      title="Send WhatsApp"
+                      title="Send WhatsApp message"
                     >
                       <WhatsappLogo size={14} />
                     </button>
@@ -132,11 +147,24 @@ export default function PatientTable({ patients, onRowClick, onEdit, onDelete })
 
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-color text-xs text-text-muted">
               <span>Last visit: {new Date(patient.lastVisit).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-              <span>{patient.totalVisits} visit{patient.totalVisits !== 1 ? 's' : ''}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setWaPatient(patient); }}
+                className="flex items-center gap-1 text-[#25D366] font-medium"
+              >
+                <WhatsappLogo size={12} weight="fill" /> Message
+              </button>
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* WhatsApp Compose Dialog */}
+      <WhatsAppMessageDialog
+        patient={waPatient}
+        isOpen={!!waPatient}
+        onClose={() => setWaPatient(null)}
+        defaultMessage={waPatient ? defaultMessage(waPatient) : ''}
+      />
     </>
   );
 }

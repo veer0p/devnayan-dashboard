@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import GlobalSearch from './GlobalSearch';
 import ThemeToggle from '../ui/ThemeToggle';
+import WhatsAppStatus from './WhatsAppStatus';
 import { List, X, MagnifyingGlass } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -64,6 +65,7 @@ export default function AppLayout({ children }) {
             </button>
             <span className="font-bold text-lg text-primary">Devnayan</span>
             <div className="flex items-center gap-2">
+              <WhatsAppStatus />
               <ThemeToggle size="sm" />
               <button
                 onClick={() => setMobileSearchOpen(true)}

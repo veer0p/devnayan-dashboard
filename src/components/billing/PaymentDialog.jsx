@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Wallet, Money, QrCode, Check, ArrowLeft, WhatsappLogo, CopySimple, ShareNetwork } from '@phosphor-icons/react';
+import { X, Wallet, Money, QrCode, Check, ArrowLeft, WhatsappLogo, CopySimple, ShareNetwork, Tooth } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { mockDoctors } from '../../data/doctors';
 import { mockPatientsList } from '../../data/patients';
 import { useLocalStorage } from '../../lib/useLocalStorage';
+import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/openwa';
+import { useCaptureInvoice } from '../../lib/useCaptureInvoice';
 
 const buildUpiUrl = ({ vpa, name, amount, note }) => {
   const params = new URLSearchParams({
@@ -25,6 +27,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
   const [step, setStep] = useState(1); // 1: method, 2: details, 3: success
   const [method, setMethod] = useState(null); // 'cash' | 'upi'
   const [amount, setAmount] = useState(0);
+  const { capturePdf } = useCaptureInvoice();
 
   const [doctors] = useLocalStorage('doctors', mockDoctors);
   const [patients] = useLocalStorage('patients', mockPatientsList);
@@ -38,7 +41,8 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
     [invoice, patients]
   );
 
-  const balance = invoice ? Math.max(0, invoice.amount - invoice.paid) : 0;
+  const balance   = invoice ? Math.max(0, invoice.amount - invoice.paid) : 0;
+  const remaining = Math.max(0, balance - amount); // balance left after current payment
 
   useEffect(() => {
     if (isOpen) {
@@ -78,25 +82,60 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
     setStep(3);
   };
 
-  const handleShareInvoice = () => {
+  const handleShareInvoice = async () => {
     if (!patient?.phone) {
       toast.error('No phone number to share with');
       return;
     }
-    const phone = patient.phone.replace(/[^0-9]/g, '');
-    const remaining = Math.max(0, balance - amount);
+    // `remaining` is already computed at component scope
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     const message = [
-      `Hello ${invoice.patient},`,
+      `Dear ${invoice.patient},`,
       ``,
-      `Payment received! 🎉`,
-      `Invoice: ${invoice.id}`,
-      `Amount Paid: ₹${amount.toLocaleString()} via ${method === 'upi' ? 'UPI' : 'Cash'}`,
-      remaining > 0 ? `Balance Due: ₹${remaining.toLocaleString()}` : `Status: Paid in full ✓`,
+      `Thank you for your payment at Devnayan Dental Clinic.`,
       ``,
-      `Thank you for choosing Devnayan Dental Clinic.`,
-    ].join('\n');
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-    onClose();
+      `Receipt No.  : REC-${invoice.id}`,
+      `Treatment    : ${invoice.treatment}`,
+      `Date         : ${dateStr}`,
+      `Payment Mode : ${method === 'upi' ? 'UPI' : 'Cash'}`,
+      ``,
+      `Amount Paid  : Rs. ${amount.toLocaleString()}`,
+      remaining > 0
+        ? `Balance Due  : Rs. ${remaining.toLocaleString()}`
+        : `Status       : Paid in Full`,
+      ``,
+      remaining > 0
+        ? `Please clear the remaining balance at your next visit or contact us at +91 84870 05334.`
+        : `Your account is fully settled. Thank you.`,
+      ``,
+      `Regards,`,
+      `Devnayan Dental Clinic`,
+    ].filter(s => s !== undefined).join('\n');
+
+    const toastId = toast.loading('Generating payment receipt PDF…');
+    try {
+      const pdfDataUrl = await capturePdf('receipt-capture-area');
+
+      const res = await sendWhatsAppMedia(patient.phone, {
+        base64: pdfDataUrl,
+        mimetype: 'application/pdf',
+        filename: `receipt-${invoice.id}.pdf`,
+        caption: message,
+      });
+
+      if (res.success) {
+        if (res.manual) {
+          toast.success('Receipt PDF downloaded — message copied to clipboard!', { id: toastId });
+        } else {
+          toast.success('Payment receipt PDF sent via WhatsApp!', { id: toastId });
+        }
+        onClose();
+      } else if (res.cancelled) {
+        toast.dismiss(toastId);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to share receipt', { id: toastId });
+    }
   };
 
   const copyUpiId = () => {
@@ -345,6 +384,85 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
             </AnimatePresence>
           </div>
         </Dialog.Content>
+
+        {/* Off-screen Capture Area for Payment Receipt — ALL inline styles, no Tailwind */}
+        <div style={{ position: 'fixed', top: -9999, left: -9999, width: 480, pointerEvents: 'none' }}>
+          <div
+            id="receipt-capture-area"
+            style={{ background: '#fff', padding: 32, border: '1px solid #e5e7eb', borderRadius: 16, fontFamily: 'Arial, sans-serif', color: '#1f2937' }}
+          >
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#10B981,#059669)', padding: '20px 24px', borderRadius: 12, color: '#fff', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 17 }}>Devnayan Dental Clinic</div>
+                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 2 }}>Advance Dental Care Hospital</div>
+                <div style={{ fontSize: 9, opacity: 0.7, marginTop: 6 }}>Lal Bahadur Shastri Rd, Bardoli, Gujarat</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.75 }}>Receipt ID</div>
+                <div style={{ fontWeight: 700, fontSize: 14, fontFamily: 'monospace', marginTop: 2 }}>REC-{invoice?.id}</div>
+                <div style={{ fontSize: 9, opacity: 0.75, marginTop: 4 }}>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              </div>
+            </div>
+
+            {/* Paid By / Date row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 1, color: '#9ca3af', fontWeight: 700 }}>Paid By</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginTop: 3 }}>{invoice?.patient}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 1, color: '#9ca3af', fontWeight: 700 }}>Payment Mode</div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#111827', marginTop: 3 }}>{method === 'upi' ? 'UPI' : 'Cash'}</div>
+              </div>
+            </div>
+
+            {/* Details label */}
+            <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 1, color: '#9ca3af', fontWeight: 700, marginBottom: 8 }}>Receipt Details</div>
+
+            {/* Table — all borders via inline styles on cells */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 16 }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#6b7280', border: '1px solid #e5e7eb' }}>Description</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#6b7280', border: '1px solid #e5e7eb' }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '9px 10px', color: '#374151', border: '1px solid #e5e7eb' }}>Dental Treatment — {invoice?.treatment}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'right', color: '#374151', border: '1px solid #e5e7eb' }}>Rs. {invoice?.amount?.toLocaleString()}</td>
+                </tr>
+                <tr style={{ background: '#f0fdf4' }}>
+                  <td style={{ padding: '9px 10px', color: '#065f46', fontWeight: 600, border: '1px solid #e5e7eb' }}>Amount Paid</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: '#059669', border: '1px solid #e5e7eb' }}>Rs. {amount?.toLocaleString()}</td>
+                </tr>
+                {remaining > 0 && (
+                  <tr style={{ background: '#fff7ed' }}>
+                    <td style={{ padding: '9px 10px', color: '#9a3412', fontWeight: 600, border: '1px solid #e5e7eb' }}>Balance Remaining</td>
+                    <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: '#dc2626', border: '1px solid #e5e7eb' }}>Rs. {remaining?.toLocaleString()}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Status badge */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
+              <div style={{ background: remaining <= 0 ? '#ecfdf5' : '#fff7ed', color: remaining <= 0 ? '#065f46' : '#9a3412', border: remaining <= 0 ? '1px solid #d1fae5' : '1px solid #fed7aa', borderRadius: 20, padding: '4px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                {remaining <= 0 ? 'Paid in Full' : 'Partially Paid'}
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 9, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1 }}>Invoice Ref</div>
+                <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: '#111827' }}>{invoice?.id}</div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ marginTop: 20, paddingTop: 12, borderTop: '1px solid #f3f4f6', textAlign: 'center', fontSize: 10, color: '#9ca3af', fontStyle: 'italic' }}>
+              Thank you for choosing Devnayan Dental Clinic · Computer-generated receipt
+            </div>
+          </div>
+        </div>
       </Dialog.Portal>
     </Dialog.Root>
   );

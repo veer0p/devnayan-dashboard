@@ -13,7 +13,10 @@ import InvoiceTemplate from '../components/billing/InvoiceTemplate';
 import PaymentDialog from '../components/billing/PaymentDialog';
 import { mockInvoices, invoiceStatuses, nextInvoiceId, deriveStatus } from '../data/billing';
 import { mockPatientsList } from '../data/patients';
+import { mockDoctors } from '../data/doctors';
 import { useLocalStorage } from '../lib/useLocalStorage';
+import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/openwa';
+import { useCaptureInvoice } from '../lib/useCaptureInvoice';
 
 const filterOptions = [
   { value: 'All', label: 'All Status' },
@@ -22,8 +25,11 @@ const filterOptions = [
 
 export default function Billing() {
   const [invoices, setInvoices] = useLocalStorage('invoices', mockInvoices);
+  const [patients] = useLocalStorage('patients', mockPatientsList);
+  const [doctors] = useLocalStorage('doctors', mockDoctors);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
+  const [sendingInvoice, setSendingInvoice] = useState(null); // invoice being PDF-captured
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
@@ -32,6 +38,8 @@ export default function Billing() {
   const [deletingInvoice, setDeletingInvoice] = useState(null);
   const [fullInvoice, setFullInvoice] = useState(null);
   const [payingInvoice, setPayingInvoice] = useState(null);
+
+  const { capturePdf } = useCaptureInvoice();
 
   // Honor inbound "New invoice for this patient" intent (from Patient drawer)
   const location = useLocation();
@@ -111,16 +119,74 @@ export default function Billing() {
     }));
   };
 
-  const sendWhatsApp = (inv) => {
-    const patient = mockPatientsList.find(p => p.id === inv.patientId);
+  const sendWhatsApp = async (inv) => {
+    const patient = patients.find(p => p.id === inv.patientId);
+    const doctor  = doctors.find(d => d.id === inv.doctorId);
     if (!patient?.phone) {
-      toast.error('No phone number on record');
+      toast.error('No phone number on record for this patient');
       return;
     }
     const balance = Math.max(0, inv.amount - inv.paid);
-    const phone = patient.phone.replace(/[^0-9]/g, '');
-    const message = `Hello ${inv.patient},\n\nInvoice ${inv.id} from Devnayan Dental Clinic.\n${inv.treatment} - ₹${inv.amount.toLocaleString()}\nPaid: ₹${inv.paid.toLocaleString()} | Balance: ₹${balance.toLocaleString()}\n\nThank you.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    const dateStr = new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const payLink = `${window.location.origin}/pay/${inv.id}`;
+
+    const message = [
+      `Dear ${inv.patient},`,
+      ``,
+      inv.status === 'Paid'
+        ? `Your invoice has been fully settled. Thank you for your prompt payment.`
+        : `Please find below the details of your outstanding invoice from Devnayan Dental Clinic.`,
+      ``,
+      `Invoice No.  : ${inv.id}`,
+      `Treatment    : ${inv.treatment}`,
+      `Date         : ${dateStr}`,
+      doctor ? `Doctor       : ${doctor.name}` : '',
+      ``,
+      `Total Amount : Rs. ${inv.amount.toLocaleString()}`,
+      `Amount Paid  : Rs. ${inv.paid.toLocaleString()}`,
+      balance > 0
+        ? `Balance Due  : Rs. ${balance.toLocaleString()}`
+        : `Status       : Paid in Full`,
+      ``,
+      balance > 0
+        ? `Please pay the balance at your earliest convenience.\nPay online: ${payLink}\n\nScan the QR code in the attached PDF to pay via UPI (GPay / PhonePe / Paytm).`
+        : `We appreciate your continued trust in Devnayan Dental Clinic.`,
+      ``,
+      `For any queries, contact us at +91 84870 05334.`,
+      ``,
+      `Regards,`,
+      `Devnayan Dental Clinic`,
+    ].filter(s => s !== undefined).join('\n');
+
+    const toastId = toast.loading('Generating invoice PDF…');
+    try {
+      // Mount the hidden capture area with this invoice, then capture after a brief paint
+      setSendingInvoice({ inv, patient, doctor });
+      await new Promise(r => setTimeout(r, 300)); // allow DOM to paint
+
+      const pdfDataUrl = await capturePdf('billing-invoice-capture');
+      setSendingInvoice(null);
+
+      const res = await sendWhatsAppMedia(patient.phone, {
+        base64: pdfDataUrl,
+        mimetype: 'application/pdf',
+        filename: `invoice-${inv.id}.pdf`,
+        caption: message,
+      });
+
+      if (res.success) {
+        if (res.manual) {
+          toast.success('Invoice PDF downloaded — message copied to clipboard!', { id: toastId });
+        } else {
+          toast.success('Invoice PDF sent via WhatsApp!', { id: toastId });
+        }
+      } else if (res.cancelled) {
+        toast.dismiss(toastId);
+      }
+    } catch (err) {
+      setSendingInvoice(null);
+      toast.error(err.message || 'Failed to send invoice', { id: toastId });
+    }
   };
 
   return (
@@ -332,6 +398,109 @@ export default function Billing() {
         confirmLabel="Delete"
         variant="danger"
       />
+      {/* Off-screen invoice capture for direct PDF generation */}
+      {sendingInvoice && (() => {
+        const { inv, patient, doctor } = sendingInvoice;
+        const bal = Math.max(0, inv.amount - inv.paid);
+        const dateStr = new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        const upiUrl = doctor?.upiId ? `upi://pay?pa=${doctor.upiId}&pn=Devnayan+Dental+Clinic&am=${bal}&tn=Invoice+${inv.id}` : null;
+        return (
+          <div style={{ position: 'fixed', top: -9999, left: -9999, width: 595, pointerEvents: 'none' }}>
+            <div id="billing-invoice-capture" style={{ background: '#fff', padding: 40, fontFamily: 'Arial, sans-serif', color: '#1f2937' }}>
+
+              {/* Header banner */}
+              <div style={{ background: 'linear-gradient(135deg,#C8902B,#B07D24)', padding: '20px 28px', borderRadius: 12, color: '#fff', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 700 }}>Devnayan Dental Clinic</div>
+                  <div style={{ fontSize: 10, opacity: 0.85, marginTop: 3 }}>Advance Dental Care Hospital</div>
+                  <div style={{ fontSize: 9, opacity: 0.7, marginTop: 8 }}>B 394601, 6-7, Lal Bahadur Shastri Rd, Bardoli, Gujarat</div>
+                  <div style={{ fontSize: 9, opacity: 0.7, marginTop: 2 }}>+91 84870 05334</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.75 }}>Invoice</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', marginTop: 3 }}>{inv.id}</div>
+                  <div style={{ fontSize: 10, opacity: 0.8, marginTop: 5 }}>{dateStr}</div>
+                </div>
+              </div>
+
+              {/* Bill To / Doctor row */}
+              <div style={{ display: 'flex', gap: 32, marginBottom: 28 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 1.5, color: '#9ca3af', fontWeight: 700, marginBottom: 5 }}>Bill To</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>{inv.patient}</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3 }}>{patient?.phone}</div>
+                </div>
+                {doctor && (
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 1.5, color: '#9ca3af', fontWeight: 700, marginBottom: 5 }}>Treating Doctor</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>{doctor.name}</div>
+                    <div style={{ fontSize: 11, color: '#C8902B', fontWeight: 500, marginTop: 3 }}>{doctor.qualification}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Line item table — inline borders on every cell */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 24 }}>
+                <thead>
+                  <tr style={{ background: '#f9fafb' }}>
+                    <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#6b7280', border: '1px solid #e5e7eb' }}>Description</th>
+                    <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#6b7280', border: '1px solid #e5e7eb' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '11px 14px', color: '#374151', border: '1px solid #e5e7eb' }}>{inv.treatment}</td>
+                    <td style={{ padding: '11px 14px', textAlign: 'right', fontWeight: 600, color: '#111827', border: '1px solid #e5e7eb' }}>Rs. {inv.amount.toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Totals */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+                <div style={{ width: 220 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#6b7280', marginBottom: 5 }}>
+                    <span>Total</span><span style={{ fontWeight: 600 }}>Rs. {inv.amount.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#059669', marginBottom: 5 }}>
+                    <span>Paid</span><span style={{ fontWeight: 700 }}>Rs. {inv.paid.toLocaleString()}</span>
+                  </div>
+                  {bal > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: '#dc2626', paddingTop: 6, borderTop: '1px solid #e5e7eb' }}>
+                      <span>Balance Due</span><span>Rs. {bal.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* QR + UPI section for pending */}
+              {bal > 0 && (
+                <div style={{ border: '1px solid #fcd34d', borderRadius: 12, padding: '14px 18px', background: '#fffbeb', display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: '#92400e', marginBottom: 5 }}>Pay Balance via UPI</div>
+                    {doctor?.upiId && <div style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#111827', marginBottom: 5 }}>{doctor.upiId}</div>}
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>
+                      Scan QR to pay <strong style={{ color: '#111827' }}>Rs. {bal.toLocaleString()}</strong> via GPay / PhonePe / Paytm
+                    </div>
+                  </div>
+                  {upiUrl && (
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&qzone=1&data=${encodeURIComponent(upiUrl)}`}
+                      alt="UPI QR"
+                      style={{ width: 90, height: 90, border: '1px solid #fcd34d', borderRadius: 8, flexShrink: 0 }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Footer */}
+              <div style={{ paddingTop: 14, borderTop: '1px solid #e5e7eb', textAlign: 'center', fontSize: 10, color: '#9ca3af', fontStyle: 'italic' }}>
+                Thank you for choosing Devnayan Dental Clinic · Computer-generated invoice
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
     </AppLayout>
   );
 }

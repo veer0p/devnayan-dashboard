@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { mockPatientsList } from '../../data/patients';
 import { mockDoctors } from '../../data/doctors';
 import { useLocalStorage } from '../../lib/useLocalStorage';
+import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/openwa';
+import { useCaptureInvoice } from '../../lib/useCaptureInvoice';
 
 const CLINIC = {
   name: 'Devnayan Dental Clinic',
@@ -18,6 +20,7 @@ const CLINIC = {
 export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
   const [patients] = useLocalStorage('patients', mockPatientsList);
   const [doctors] = useLocalStorage('doctors', mockDoctors);
+  const { capturePdf } = useCaptureInvoice();
 
   const patient = useMemo(
     () => invoice ? patients.find(p => p.id === invoice.patientId) : null,
@@ -41,25 +44,60 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
     });
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!patient?.phone) {
       toast.error('No phone number on record');
       return;
     }
-    const phone = patient.phone.replace(/[^0-9]/g, '');
+
+    const payLink = `${window.location.origin}/pay/${invoice.id}`;
     const message = [
-      `Hello ${invoice.patient},`,
+      `Dear ${invoice.patient},`,
       ``,
-      `Please find your invoice ${invoice.id} from ${CLINIC.name}.`,
-      `Treatment: ${invoice.treatment}`,
-      `Date: ${dateStr}`,
-      `Total: ₹${invoice.amount.toLocaleString()}`,
-      `Paid: ₹${invoice.paid.toLocaleString()}`,
-      balance > 0 ? `Balance: ₹${balance.toLocaleString()}` : `Status: Paid in full`,
-      doctor?.upiId && balance > 0 ? `\nUPI: ${doctor.upiId}` : '',
-      `\nThank you for choosing ${CLINIC.name}.`,
-    ].filter(Boolean).join('\n');
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+      `Please find attached your invoice from Devnayan Dental Clinic.`,
+      ``,
+      `Invoice No.  : ${invoice.id}`,
+      `Treatment    : ${invoice.treatment}`,
+      `Date         : ${dateStr}`,
+      doctor ? `Doctor       : ${doctor.name}` : '',
+      ``,
+      `Total Amount : Rs. ${invoice.amount.toLocaleString()}`,
+      `Amount Paid  : Rs. ${invoice.paid.toLocaleString()}`,
+      balance > 0
+        ? `Balance Due  : Rs. ${balance.toLocaleString()}`
+        : `Status       : Paid in Full`,
+      balance > 0 ? `` : '',
+      balance > 0
+        ? `You may pay the balance online at:\n${payLink}\n\nAlternatively, scan the QR code in the attached invoice to pay via UPI.`
+        : `Thank you for settling your payment promptly.`,
+      ``,
+      `For any queries, please contact us at +91 84870 05334.`,
+      ``,
+      `Regards,`,
+      `Devnayan Dental Clinic`,
+    ].filter(s => s !== undefined).join('\n');
+
+    const toastId = toast.loading('Generating invoice PDF…');
+    try {
+      const pdfDataUrl = await capturePdf('invoice-capture-area');
+
+      const res = await sendWhatsAppMedia(patient.phone, {
+        base64: pdfDataUrl,
+        mimetype: 'application/pdf',
+        filename: `invoice-${invoice.id}.pdf`,
+        caption: message,
+      });
+
+      if (res.success) {
+        if (res.manual) {
+          toast.success('Invoice PDF downloaded — message copied to clipboard!', { id: toastId });
+        } else {
+          toast.success('Invoice PDF sent via WhatsApp!', { id: toastId });
+        }
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to share invoice', { id: toastId });
+    }
   };
 
   return (
@@ -99,7 +137,10 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
 
           {/* Invoice paper */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 print:p-0 print:overflow-visible">
-            <div className="invoice-paper mx-auto max-w-3xl bg-white text-gray-800 shadow-2xl rounded-2xl overflow-hidden print:shadow-none print:rounded-none print:max-w-full">
+            <div 
+              id="invoice-capture-area"
+              className="invoice-paper mx-auto max-w-3xl bg-white text-gray-800 shadow-2xl rounded-2xl overflow-hidden print:shadow-none print:rounded-none print:max-w-full"
+            >
               {/* Header */}
               <div className="bg-gradient-to-r from-[#C8902B] to-[#B07D24] px-6 md:px-10 py-6 md:py-8 text-white print:py-6">
                 <div className="flex items-start justify-between gap-4">
@@ -223,16 +264,29 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
                   </div>
                 </div>
 
-                {/* Payment info */}
-                {balance > 0 && doctor?.upiId && (
+                {/* Payment info — show QR for any outstanding balance */}
+                {balance > 0 && (
                   <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                      <Wallet size={20} className="text-amber-600 shrink-0 mt-0.5" />
-                      <div>
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex items-start gap-4">
+                      <div className="flex-1">
                         <div className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Pay Balance via UPI</div>
-                        <div className="text-sm font-mono font-bold text-gray-900">{doctor.upiId}</div>
-                        <div className="text-xs text-gray-600 mt-1">Scan QR or use UPI ID. Amount: <span className="font-semibold">₹{balance.toLocaleString()}</span></div>
+                        {doctor?.upiId && (
+                          <div className="text-sm font-mono font-bold text-gray-900 mb-1">{doctor.upiId}</div>
+                        )}
+                        <div className="text-xs text-gray-600">
+                          Scan QR code to pay <span className="font-semibold">Rs. {balance.toLocaleString()}</span> instantly via GPay / PhonePe / Paytm
+                        </div>
+                        <div className="text-xs text-gray-500 mt-2 break-all">
+                          Or pay online: <span className="font-mono">{window.location.origin}/pay/{invoice.id}</span>
+                        </div>
                       </div>
+                      {doctor?.upiId && (
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&qzone=1&data=${encodeURIComponent(`upi://pay?pa=${doctor.upiId}&pn=Devnayan+Dental+Clinic&am=${balance}&tn=Invoice+${invoice.id}`)}`}
+                          alt="UPI QR Code"
+                          className="w-20 h-20 rounded-lg border border-amber-200 shrink-0"
+                        />
+                      )}
                     </div>
                   </div>
                 )}

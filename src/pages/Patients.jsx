@@ -34,6 +34,27 @@ export default function Patients() {
   const [editingPatient, setEditingPatient] = useState(null);
   const [deletingPatient, setDeletingPatient] = useState(null);
 
+  React.useEffect(() => {
+    const oldNumbers = [
+      '+91 98765 43210',
+      '+91 98765 43211',
+      '+91 98765 43212',
+      '+91 98765 43213',
+      '+91 98765 43214',
+      '+91 84870 05334'
+    ];
+    const needsMigration = patients.some(p => oldNumbers.includes(p.phone));
+    if (needsMigration) {
+      const migrated = patients.map(p => {
+        if (oldNumbers.includes(p.phone)) {
+          return { ...p, phone: '9537293756' };
+        }
+        return p;
+      });
+      setPatients(migrated);
+    }
+  }, [patients, setPatients]);
+
   const filteredPatients = useMemo(() => {
     return patients.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

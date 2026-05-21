@@ -14,6 +14,8 @@ import {
 } from '@phosphor-icons/react';
 import ToothChart from './ToothChart';
 import StatusBadge from '../ui/StatusBadge';
+import { toast } from 'sonner';
+import { sendWhatsAppMessage } from '../../lib/openwa';
 
 export default function PatientDrawer({ patient, isOpen, onClose, onEdit, onDelete, onUpdate }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -149,7 +151,24 @@ export default function PatientDrawer({ patient, isOpen, onClose, onEdit, onDele
                       </div>
                       {patient.balance > 0 ? (
                         <button
-                          onClick={() => window.open(`https://wa.me/${patient.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${patient.name}, your outstanding balance at Devnayan Dental Clinic is ₹${patient.balance.toLocaleString()}. Please settle at your convenience.`)}`, '_blank')}
+                          onClick={async () => {
+                            const toastId = toast.loading('Sending outstanding balance notification...');
+                            try {
+                              const msg = `Hello ${patient.name}, your outstanding balance at Devnayan Dental Clinic is ₹${patient.balance.toLocaleString()}. Please settle at your convenience.`;
+                              const res = await sendWhatsAppMessage(patient.phone, msg);
+                              if (res.success) {
+                                if (res.manual) {
+                                  toast.success('Opened manual WhatsApp link', { id: toastId });
+                                } else {
+                                  toast.success('Outstanding balance shared via WhatsApp API!', { id: toastId });
+                                }
+                              } else if (res.cancelled) {
+                                toast.dismiss(toastId);
+                              }
+                            } catch (err) {
+                              toast.error(err.message || 'Failed to send notification', { id: toastId });
+                            }
+                          }}
                           className="text-[11px] font-medium text-text-muted hover:text-text-main mt-2 text-left transition-colors"
                         >
                           Send payment link →
@@ -172,7 +191,23 @@ export default function PatientDrawer({ patient, isOpen, onClose, onEdit, onDele
                         <span className="text-[12px] font-medium text-text-main">Book</span>
                       </button>
                       <button
-                        onClick={() => window.open(`https://wa.me/${patient.phone.replace(/[^0-9]/g, '')}`, '_blank')}
+                        onClick={async () => {
+                          const toastId = toast.loading('Initiating WhatsApp...');
+                          try {
+                            const res = await sendWhatsAppMessage(patient.phone);
+                            if (res.success) {
+                              if (res.manual) {
+                                toast.success('Opened manual WhatsApp link', { id: toastId });
+                              } else {
+                                toast.success('Message sent via WhatsApp API!', { id: toastId });
+                              }
+                            } else if (res.cancelled) {
+                              toast.dismiss(toastId);
+                            }
+                          } catch (err) {
+                            toast.error(err.message || 'Failed to send message', { id: toastId });
+                          }
+                        }}
                         className="flex items-center justify-center gap-2 p-3 bg-bg-body border border-border-color rounded-lg hover:border-text-muted/40 hover:bg-bg-card transition-all"
                       >
                         <WhatsappLogo size={14} className="text-text-muted" />

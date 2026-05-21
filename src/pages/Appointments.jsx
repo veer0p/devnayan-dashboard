@@ -9,6 +9,8 @@ import {
   Clock,
   MapPin,
   Stethoscope,
+  List,
+  WhatsappLogo,
 } from '@phosphor-icons/react';
 import { useLocation } from 'react-router-dom';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
@@ -27,6 +29,7 @@ import Select from '../components/ui/Select';
 import { useLocalStorage } from '../lib/useLocalStorage';
 import { useAppointmentReminders } from '../lib/useAppointmentReminders';
 import { mockPatientsList } from '../data/patients';
+import { sendWhatsAppMessage } from '../lib/openwa';
 
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -263,7 +266,6 @@ const PageToolbar = ({ view, label, onNavigate, onViewChange, hideNav }) => {
     { id: 'day',    label: 'Day' },
     { id: 'week',   label: 'Week' },
     { id: 'month',  label: 'Month' },
-    { id: 'agenda', label: 'List' },
   ];
 
   return (
@@ -329,7 +331,7 @@ const PageToolbar = ({ view, label, onNavigate, onViewChange, hideNav }) => {
 };
 
 // --- Desktop List view (proper table — matches Patients/Billing styling) ---
-const AppointmentsTable = ({ appointments, doctors, onSelect }) => {
+const AppointmentsTable = ({ appointments, doctors, onSelect, onRemind }) => {
   const sorted = useMemo(
     () => [...appointments].sort((a, b) => new Date(a.start) - new Date(b.start)),
     [appointments]
@@ -355,7 +357,8 @@ const AppointmentsTable = ({ appointments, doctors, onSelect }) => {
             <th className="py-3 font-semibold">Treatment</th>
             <th className="py-3 font-semibold">Doctor</th>
             <th className="py-3 font-semibold">Chair</th>
-            <th className="py-3 font-semibold pr-5">Status</th>
+            <th className="py-3 font-semibold">Status</th>
+            <th className="py-3 font-semibold pr-5">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -403,11 +406,24 @@ const AppointmentsTable = ({ appointments, doctors, onSelect }) => {
                   )}
                 </td>
                 <td className="py-3 text-text-muted text-[12px] whitespace-nowrap pr-4">{app.chair}</td>
-                <td className="py-3 pr-5 whitespace-nowrap">
+                <td className="py-3 whitespace-nowrap">
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${tone.bg} ${tone.text}`}>
                     <span className="w-1 h-1 rounded-full" style={{ background: tone.dot }} />
                     {app.status}
                   </span>
+                </td>
+                <td className="py-2.5 pr-5 whitespace-nowrap">
+                  {app.status === 'Pending' ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onRemind(app, e); }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/25 active:scale-95 text-[11px] font-semibold transition-all"
+                    >
+                      <WhatsappLogo size={13} weight="fill" />
+                      Send Reminder
+                    </button>
+                  ) : (
+                    <span className="text-text-muted/30 text-[11px]">—</span>
+                  )}
                 </td>
               </tr>
             );
@@ -426,7 +442,7 @@ const getDayLabel = (date) => {
   return format(date, 'EEEE');
 };
 
-const MobileListView = ({ appointments, onSelect, doctors }) => {
+const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
   const grouped = appointments.reduce((acc, app) => {
     const dateKey = format(new Date(app.start), 'yyyy-MM-dd');
     if (!acc[dateKey]) acc[dateKey] = [];
@@ -472,11 +488,14 @@ const MobileListView = ({ appointments, onSelect, doctors }) => {
                 const palette = paletteFromDoctor(doctor);
                 const tone = statusTone[app.status] || statusTone.Pending;
                 return (
-                  <motion.button
+                  <motion.div
                     key={app.id}
                     whileTap={{ scale: 0.985 }}
                     onClick={() => onSelect(app)}
-                    className="relative w-full text-left bg-bg-card border border-border-color rounded-2xl p-4 hover:border-border-strong transition-colors overflow-hidden"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && onSelect(app)}
+                    className="relative w-full text-left bg-bg-card border border-border-color rounded-2xl p-4 hover:border-border-strong transition-colors overflow-hidden cursor-pointer"
                     style={{ boxShadow: '0 1px 0 rgba(255,255,255,0.02), 0 2px 8px -2px rgba(0,0,0,0.3)' }}
                   >
                     <div
@@ -501,10 +520,21 @@ const MobileListView = ({ appointments, onSelect, doctors }) => {
                           <div className="text-[12px] text-text-muted truncate">{app.treatmentName}</div>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${tone.bg} ${tone.text}`}>
-                        <span className="w-1 h-1 rounded-full" style={{ background: tone.dot }} />
-                        {app.status}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${tone.bg} ${tone.text}`}>
+                          <span className="w-1 h-1 rounded-full" style={{ background: tone.dot }} />
+                          {app.status}
+                        </span>
+                        {app.status === 'Pending' && (
+                          <button
+                            onClick={(e) => onRemind(app, e)}
+                            title="Send WhatsApp Reminder"
+                            className="w-7 h-7 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/20 transition-all flex items-center justify-center shrink-0 active:scale-95"
+                          >
+                            <WhatsappLogo size={14} weight="fill" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-3 text-[11px] text-text-muted flex-wrap">
@@ -525,7 +555,7 @@ const MobileListView = ({ appointments, onSelect, doctors }) => {
                         </span>
                       )}
                     </div>
-                  </motion.button>
+                  </motion.div>
                 );
               })}
             </div>
@@ -567,6 +597,19 @@ export default function Appointments() {
   const [doctorFilter, setDoctorFilter] = useState('All');
   const [currentView, setCurrentView] = useState('week');
   const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [viewMode, setViewMode] = useLocalStorage('appointments_view_mode', 'calendar');
+
+  // Automatically fall back from multi-column week view to clean daily column list on mobile viewports
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768 && currentView === 'week') {
+        setCurrentView('day');
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [currentView]);
 
   // Honor inbound "Book this patient" intent from elsewhere (e.g. Patient drawer)
   const location = useLocation();
@@ -628,6 +671,56 @@ export default function Appointments() {
       }
     }
     setSelectedEvent(event);
+  };
+
+  const handleQuickReminder = async (app, e) => {
+    if (e) e.stopPropagation();
+    const patient = patients.find(p => p.id === app.patientId);
+    if (!patient?.phone) {
+      toast.error('No phone number registered for this patient');
+      return;
+    }
+
+    const doctor = doctors.find(d => d.id === app.doctorId);
+    const startDate = new Date(app.start);
+    const endDate = new Date(app.end);
+
+    const message = [
+      `Dear ${app.patientName},`,
+      ``,
+      `This is a reminder for your upcoming appointment at Devnayan Dental Clinic.`,
+      ``,
+      `Treatment    : ${app.treatmentName}`,
+      `Date         : ${format(startDate, 'EEEE, d MMMM yyyy')}`,
+      `Time         : ${format(startDate, 'h:mm a')} - ${format(endDate, 'h:mm a')}`,
+      doctor ? `Doctor       : ${doctor.name}` : '',
+      app.chairId ? `Chair        : Chair ${app.chairId}` : '',
+      ``,
+      `Location: Lal Bahadur Shastri Rd, Rushikesh Nagar, Bardoli, Gujarat`,
+      ``,
+      `Please arrive 5 minutes before your scheduled time. To reschedule or for any queries, contact us at +91 84870 05334.`,
+      ``,
+      `We look forward to seeing you.`,
+      ``,
+      `Regards,`,
+      `Devnayan Dental Clinic`,
+    ].filter(s => s !== undefined).join('\n');
+
+    const toastId = toast.loading(`Sending reminder to ${app.patientName}...`);
+    try {
+      const res = await sendWhatsAppMessage(patient.phone, message);
+      if (res.success) {
+        if (res.manual) {
+          toast.success('Opened manual WhatsApp link', { id: toastId });
+        } else {
+          toast.success('Reminder sent via WhatsApp API!', { id: toastId });
+        }
+      } else if (res.cancelled) {
+        toast.dismiss(toastId);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to send WhatsApp reminder', { id: toastId });
+    }
   };
 
   const handleSubmit = (appointment, isEdit) => {
@@ -726,9 +819,46 @@ export default function Appointments() {
             className="w-full sm:w-52"
             size="md"
           />
+          
+          {/* View mode segmented switcher */}
+          <div className="flex items-center gap-0.5 bg-bg-body/40 p-1 rounded-lg border border-border-color shrink-0 self-stretch sm:self-auto">
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`relative flex-1 sm:flex-initial px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+                viewMode === 'calendar' ? 'text-text-main font-bold' : 'text-text-muted hover:text-text-main'
+              }`}
+            >
+              {viewMode === 'calendar' && (
+                <motion.span
+                  layoutId="viewMode-pill"
+                  className="absolute inset-0 bg-bg-card border border-border-strong rounded-md shadow-sm pointer-events-none"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              <CalendarBlank size={14} className="relative z-10" />
+              <span className="relative z-10">Calendar</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`relative flex-1 sm:flex-initial px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+                viewMode === 'list' ? 'text-text-main font-bold' : 'text-text-muted hover:text-text-main'
+              }`}
+            >
+              {viewMode === 'list' && (
+                <motion.span
+                  layoutId="viewMode-pill"
+                  className="absolute inset-0 bg-bg-card border border-border-strong rounded-md shadow-sm pointer-events-none"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              <List size={14} className="relative z-10" />
+              <span className="relative z-10">List</span>
+            </button>
+          </div>
+
           <button
             onClick={openAdd}
-            className="h-9 px-3.5 rounded-lg bg-primary text-white flex items-center gap-1.5 text-[13px] font-semibold hover:bg-primary-hover transition-colors shadow-sm whitespace-nowrap"
+            className="h-9 px-3.5 rounded-lg bg-primary text-white flex items-center justify-center gap-1.5 text-[13px] font-semibold hover:bg-primary-hover transition-colors shadow-sm whitespace-nowrap"
           >
             <Plus size={14} weight="bold" /> Book patient
           </button>
@@ -767,20 +897,22 @@ export default function Appointments() {
         </motion.div>
       )}
 
-      {/* Mobile list */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="md:hidden"
-      >
-        <MobileListView appointments={filteredAppointments} onSelect={handleSelectEvent} doctors={doctors} />
-      </motion.div>
+      {/* Mobile list view */}
+      {viewMode === 'list' && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="md:hidden"
+        >
+          <MobileListView appointments={filteredAppointments} onSelect={handleSelectEvent} doctors={doctors} onRemind={handleQuickReminder} />
+        </motion.div>
+      )}
 
-      {/* Desktop calendar */}
+      {/* Main Appointments Display Card (Calendar View or List View) */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="hidden md:flex flex-1 bg-bg-card border border-border-color rounded-2xl p-5 flex-col"
+        className={`${viewMode === 'calendar' ? 'flex' : 'hidden md:flex'} flex-1 bg-bg-card border border-border-color rounded-2xl p-5 flex-col`}
         style={{ boxShadow: '0 1px 0 rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.5)' }}
       >
         <style>{`
@@ -991,50 +1123,66 @@ export default function Appointments() {
           }
         `}</style>
 
-        <PageToolbar
-          view={currentView}
-          label={toolbarLabel}
-          onNavigate={handleNavigate}
-          onViewChange={setCurrentView}
-          hideNav={currentView === 'agenda'}
-        />
+        {viewMode !== 'list' ? (
+          <PageToolbar
+            view={currentView}
+            label={toolbarLabel}
+            onNavigate={handleNavigate}
+            onViewChange={setCurrentView}
+            hideNav={currentView === 'agenda'}
+          />
+        ) : (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-border-color">
+            <h2 className="text-[17px] font-semibold text-text-main tracking-tight">
+              All Scheduled Appointments ({filteredAppointments.length})
+            </h2>
+          </div>
+        )}
 
-        {currentView === 'agenda' ? (
+        {viewMode === 'list' ? (
           <AppointmentsTable
             appointments={filteredAppointments}
             doctors={doctors}
             onSelect={handleSelectEvent}
+            onRemind={handleQuickReminder}
+          />
+        ) : currentView === 'agenda' ? (
+          <AppointmentsTable
+            appointments={filteredAppointments}
+            doctors={doctors}
+            onSelect={handleSelectEvent}
+            onRemind={handleQuickReminder}
           />
         ) : (
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          view={currentView}
-          onView={setCurrentView}
-          date={currentDate}
-          onNavigate={setCurrentDate}
-          views={['day', 'week', 'month']}
-          step={15}
-          timeslots={4}
-          min={new Date(2025, 1, 1, 8, 0)}
-          max={new Date(2025, 1, 1, 20, 0)}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          selectable
-          popup
-          formats={{
-            eventTimeRangeFormat: () => '',
-            eventTimeRangeStartFormat: () => '',
-            eventTimeRangeEndFormat: () => '',
-          }}
-          components={{
-            event: (props) => <EventChip {...props} doctors={doctors} view={currentView} />,
-            toolbar: () => null,
-          }}
-          className="flex-1 min-h-0"
-        />
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            view={currentView}
+            onView={setCurrentView}
+            date={currentDate}
+            onNavigate={setCurrentDate}
+            views={['day', 'week', 'month']}
+            step={15}
+            timeslots={4}
+            min={new Date(2025, 1, 1, 8, 0)}
+            max={new Date(2025, 1, 1, 20, 0)}
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleSelectEvent}
+            selectable
+            popup
+            formats={{
+              eventTimeRangeFormat: () => '',
+              eventTimeRangeStartFormat: () => '',
+              eventTimeRangeEndFormat: () => '',
+            }}
+            components={{
+              event: (props) => <EventChip {...props} doctors={doctors} view={currentView} />,
+              toolbar: () => null,
+            }}
+            className="flex-1 min-h-0"
+          />
         )}
       </motion.div>
 

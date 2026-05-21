@@ -3,6 +3,7 @@ import { MagnifyingGlass, Bell } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import GlobalSearch from './GlobalSearch';
 import ThemeToggle from '../ui/ThemeToggle';
+import WhatsAppStatus from './WhatsAppStatus';
 
 export default function TopBar() {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -21,6 +22,7 @@ export default function TopBar() {
       </button>
 
       <div className="flex items-center gap-2">
+        <WhatsAppStatus />
         <ThemeToggle />
         <motion.button
           whileHover={{ scale: 1.05 }}
