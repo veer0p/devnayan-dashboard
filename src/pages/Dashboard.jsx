@@ -253,7 +253,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight text-text-main">
-            Good {today.getHours() < 12 ? 'morning' : today.getHours() < 18 ? 'afternoon' : 'evening'}, ${clinic.doctorName.split(" ")[0] + " " + clinic.doctorName.split(" ")[1]}
+            Good {today.getHours() < 12 ? 'morning' : today.getHours() < 18 ? 'afternoon' : 'evening'}, {clinic.doctorName.split(" ")[0] + " " + clinic.doctorName.split(" ")[1]}
           </h1>
           <p className="text-sm text-text-muted mt-0.5">
             {today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
