@@ -16,10 +16,10 @@ function App() {
   const isPublicPay = location.pathname.startsWith('/pay/');
 
   useEffect(() => {
-    const doctorsStr = localStorage.getItem('doctors');
+    const doctorsStr = localStorage.getItem('dentease.doctors');
     if (doctorsStr && doctorsStr.includes('${clinic.doctorName}')) {
-      localStorage.removeItem('doctors');
-      localStorage.removeItem('patients');
+      localStorage.removeItem('dentease.doctors');
+      localStorage.removeItem('dentease.patients');
       window.location.reload();
     }
   }, []);
