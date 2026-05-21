@@ -16,18 +16,22 @@ import ToothChart from './ToothChart';
 import StatusBadge from '../ui/StatusBadge';
 import { toast } from 'sonner';
 import { sendWhatsAppMessage } from '../../lib/openwa';
+import { useClinic } from '../../context/ClinicContext';
 
 export default function PatientDrawer({ patient, isOpen, onClose, onEdit, onDelete, onUpdate }) {
+  const { clinic } = useClinic();
   const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
 
   if (!patient) return null;
 
   const goBook = () => {
+  const { clinic } = useClinic();
     onClose();
     navigate('/appointments', { state: { bookForPatientId: patient.id } });
   };
   const goInvoice = () => {
+  const { clinic } = useClinic();
     onClose();
     navigate('/billing', { state: { invoiceForPatientId: patient.id } });
   };
@@ -154,7 +158,7 @@ export default function PatientDrawer({ patient, isOpen, onClose, onEdit, onDele
                           onClick={async () => {
                             const toastId = toast.loading('Sending outstanding balance notification...');
                             try {
-                              const msg = `Hello ${patient.name}, your outstanding balance at Devnayan Dental Clinic is ₹${patient.balance.toLocaleString()}. Please settle at your convenience.`;
+                              const msg = `Hello ${patient.name}, your outstanding balance at ${clinic.name} is ₹${patient.balance.toLocaleString()}. Please settle at your convenience.`;
                               const res = await sendWhatsAppMessage(patient.phone, msg);
                               if (res.success) {
                                 if (res.manual) {

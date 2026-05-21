@@ -8,8 +8,10 @@ import { mockDoctors } from '../../data/doctors';
 import { useLocalStorage } from '../../lib/useLocalStorage';
 import { sendWhatsAppMessage } from '../../lib/openwa';
 import StatusBadge from '../ui/StatusBadge';
+import { useClinic } from '../../context/ClinicContext';
 
 export default function AppointmentPanel({ event, isOpen, onClose, onEdit, onDelete }) {
+  const { clinic } = useClinic();
   const [patients] = useLocalStorage('patients', mockPatientsList);
   const [doctors] = useLocalStorage('doctors', mockDoctors);
 
@@ -26,7 +28,7 @@ export default function AppointmentPanel({ event, isOpen, onClose, onEdit, onDel
     
     const boldMessage = [
       `*Appointment Reminder* 📅`,
-      `*Devnayan Dental Clinic* 🦷`,
+      `*${clinic.name}* 🦷`,
       `-----------------------------`,
       `Dear *${event.patientName}*,`,
       ``,

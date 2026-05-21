@@ -1,0 +1,101 @@
+export const clinics = {
+  "dr-rajendra-desai": {
+    id: "dr-rajendra-desai",
+    name: "Dr. Rajendra Desai's Dental Clinic & Implant Centre",
+    doctorName: "Dr. Rajendra Desai",
+    address: "1st Floor, Radhika Chamber, Sardar Patel Marg, Bardoli – 394601",
+    phone: "+91 98251 11534",
+    phoneRaw: "919825111534",
+    hours: "Mon–Sat: 10 AM–1 PM, 3–7 PM",
+    rating: "4.9",
+    reviewsCount: "335",
+    website: "https://totaldentalsolution.com",
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.586995580462!2d73.1073871!3d21.1290257!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be0677396456335%3A0x734d8e0174a88814!2sDr.%20RAJENDRA%20DESAI%27s%20DENTAL%20CLINIC%20AND%20IMPLANT%20CENTRE!5e0!3m2!1sen!2sin!4v1779383771501!5m2!1sen!2sin",
+    placeId: "ChIJNWNFlnNn4DsRFIiodAGOTXM"
+  },
+  "devnayan": {
+    id: "devnayan",
+    name: "Devnayan Dental Clinic",
+    doctorName: "Dr. Chintan Sayania",
+    address: "6-7, Lal Bahadur Shastri Rd, Rushikesh Nagar, Bardoli – 394601",
+    phone: "+91 99135 20707",
+    phoneRaw: "919913520707",
+    hours: "Mon–Sat: 9 AM–1 PM, 3–8 PM",
+    rating: "4.9",
+    reviewsCount: "128",
+    website: null,
+    mapEmbedUrl: "https://maps.google.com/maps?q=6-7,+Lal+Bahadur+Shastri+Rd,+Rushikesh+Nagar,+Bardoli&t=&z=15&ie=UTF8&iwloc=&output=embed",
+    placeId: "ChIJmwAxrAxn4DsREY94fmb8Sos"
+  },
+  "phoenix": {
+    id: "phoenix",
+    name: "Phoenix Multispecialty Dental Clinic",
+    doctorName: "Chief Dental Surgeon",
+    address: "A-4, Sardar Patel Marg, near Jain Derasar, Hirachand Nagar, Bardoli – 394601",
+    phone: "+91 81412 17111",
+    phoneRaw: "918141217111",
+    hours: "Mon–Sat: 10 AM–6 PM | Sun: 10 AM–12 PM",
+    rating: "5.0",
+    reviewsCount: "149",
+    website: "https://phoenixdentcare.com",
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.5074588393595!2d73.10432297592742!3d21.132194084216692!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be067795864dee9%3A0xc9fef401e0be4ef9!2sPhoenix%20Multispecialty%20Dental%20Clinic%20-%20Best%20Dental%20Clinic%20In%20Gujrat!5e0!3m2!1sen!2sin!4v1779383822292!5m2!1sen!2sin",
+    placeId: "ChIJ6d5kWHln4DsR-U6-4AH0_sk"
+  },
+  "patels": {
+    id: "patels",
+    name: "Patels Dental Clinic & Implant Center",
+    doctorName: "Chief Dental Surgeon",
+    address: "1st Floor, near Shivaji Chowk, Lotus Mall, Tulsi Marg, Patel Nagar, Bardoli – 394601",
+    phone: "+91 88661 33669",
+    phoneRaw: "918866133669",
+    hours: "Mon–Sat: 9:30 AM–1 PM, 4–8 PM",
+    rating: "5.0",
+    reviewsCount: "102",
+    website: "https://patelsdentalclinicbardoli.com",
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.66316362392!2d73.11711807592741!3d21.12599108443062!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be0672decfb2d83%3A0x26912f691fc316fc!2sPatels%20Dental%20Clinic%20And%20Implant%20Center%20Bardoli!5e0!3m2!1sen!2sin!4v1779384275852!5m2!1sen!2sin",
+    placeId: "ChIJgy377C1n4DsR_BbDH2kvkSY"
+  },
+  "dental-spot": {
+    id: "dental-spot",
+    name: "Dental Spot",
+    doctorName: "Chief Dental Surgeon",
+    address: "202, 2nd Floor, Sardar Arcade, In front of City Mall, Station Rd, Hirachand Nagar, Bardoli – 394601",
+    phone: "02622 299 780",
+    phoneRaw: "912622299780",
+    hours: "Mon–Sat: 9:30 AM–1:30 PM",
+    rating: "5.0",
+    reviewsCount: "64",
+    website: "https://advancelaserdentalcare.com",
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.536780758706!2d73.10437797592732!3d21.131026084257048!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be0676d6376ce15%3A0x6e6aedb0f99a013e!2sDental%20spot!5e0!3m2!1sen!2sin!4v1779384303672!5m2!1sen!2sin",
+    placeId: "ChIJFc52Y21n4DsRPgGa-bDtam4"
+  },
+
+  "jain": {
+    id: "jain",
+    name: "Jain Dental Clinic & Implant Center",
+    doctorName: "Chief Dental Surgeon",
+    address: "Shop No. 61, Mudit Palace, Sardar Patel Marg, Janta Nagar Society, Bardoli – 394601",
+    phone: "+91 63537 66959",
+    phoneRaw: "916353766959",
+    hours: "Mon–Sat: 9 AM–7 PM",
+    rating: "4.9",
+    reviewsCount: "52",
+    website: null,
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d119086.44664629246!2d72.87147542174054!3d21.134424644669686!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be067729c955131%3A0xbd1dd4f72a36ce6c!2sJain%20Dental%20Clinic%20%26%20implant%20center!5e0!3m2!1sen!2sin!4v1779384044844!5m2!1sen!2sin",
+    placeId: "ChIJMVGVnHJn4DsRbM42KvfUHb0"
+  },
+  "vatsalya": {
+    id: "vatsalya",
+    name: "Vatsalya Dental Clinic & Implant Center",
+    doctorName: "Chief Dental Surgeon",
+    address: "1st Floor, Shivanjali Arcade, O-5, opp. Shishudeep Hospital, Hirachand Nagar, Bardoli – 394601",
+    phone: "+91 99999 00000", /* Fallback since not listed publicly */
+    phoneRaw: "919999900000",
+    hours: "Mon–Sat: 9:30 AM–1:30 PM, 3:30–7:30 PM",
+    rating: "5.0",
+    reviewsCount: "32",
+    website: null,
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.524051775043!2d73.10383738571413!3d21.131533134089402!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be0670e822f7733%3A0x64592014c0167185!2sVATSALYA%20DENTAL%20CLINIC%20%26%20IMPLANT%20CENTER!5e0!3m2!1sen!2sin!4v1779384084310!5m2!1sen!2sin",
+    placeId: "ChIJM3cvgg5n4DsRhXEWwBQgWWQ"
+  }
+};

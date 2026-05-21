@@ -29,30 +29,36 @@ import { mockInvoices } from '../data/billing';
 import { mockInventory } from '../data/inventory';
 import { mockAppointments } from '../data/appointments';
 import { mockDoctors } from '../data/doctors';
+import { useClinic } from '../context/ClinicContext';
 
 const sameDay = (a, b) => {
+  const { clinic } = useClinic();
   const da = a instanceof Date ? a : new Date(a);
   const db = b instanceof Date ? b : new Date(b);
   return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
 };
 
 const monthKey = (date) => {
+  const { clinic } = useClinic();
   const d = date instanceof Date ? date : new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
 const monthLabel = (key) => {
+  const { clinic } = useClinic();
   const [year, month] = key.split('-').map(Number);
   return new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'short' });
 };
 
 const daysAgo = (date) => {
+  const { clinic } = useClinic();
   const ms = Date.now() - new Date(date).getTime();
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 };
 
 // Delta indicator — small arrow + percent, monochrome by default.
 const Delta = ({ value, label }) => {
+  const { clinic } = useClinic();
   if (value == null) return null;
   const positive = value >= 0;
   return (
@@ -65,6 +71,7 @@ const Delta = ({ value, label }) => {
 };
 
 export default function Dashboard() {
+  const { clinic } = useClinic();
   const navigate = useNavigate();
   const [patients] = useLocalStorage('patients', mockPatientsList);
   const [invoices] = useLocalStorage('invoices', mockInvoices);
@@ -246,7 +253,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight text-text-main">
-            Good {today.getHours() < 12 ? 'morning' : today.getHours() < 18 ? 'afternoon' : 'evening'}, Dr. Chintan
+            Good {today.getHours() < 12 ? 'morning' : today.getHours() < 18 ? 'afternoon' : 'evening'}, ${clinic.doctorName.split(" ")[0] + " " + clinic.doctorName.split(" ")[1]}
           </h1>
           <p className="text-sm text-text-muted mt-0.5">
             {today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}

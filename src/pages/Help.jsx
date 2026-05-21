@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CaretDown, Phone, WhatsappLogo, Envelope, BookOpen, VideoCamera, ChatCircle } from '@phosphor-icons/react';
 import AppLayout from '../components/layout/AppLayout';
+import { useClinic } from '../context/ClinicContext';
 
 const faqs = [
   { q: 'How do I book an appointment?', a: 'Go to the Appointments page and click "Book Patient". Select the patient, treatment, date and time, then confirm the booking.' },
@@ -13,6 +14,7 @@ const faqs = [
 ];
 
 export default function Help() {
+  const { clinic } = useClinic();
   const [openIdx, setOpenIdx] = useState(null);
 
   return (

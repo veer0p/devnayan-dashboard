@@ -5,12 +5,14 @@ import App from './App.jsx'
 
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { ClinicProvider } from './context/ClinicContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-      <Toaster
+    <ClinicProvider>
+      <BrowserRouter>
+        <App />
+        <Toaster
         position="bottom-right"
         theme="dark"
         toastOptions={{
@@ -21,6 +23,7 @@ createRoot(document.getElementById('root')).render(
           },
         }}
       />
-    </BrowserRouter>
+      </BrowserRouter>
+    </ClinicProvider>
   </StrictMode>,
 )

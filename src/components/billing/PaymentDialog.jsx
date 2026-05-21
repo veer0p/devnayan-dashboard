@@ -8,8 +8,10 @@ import { mockPatientsList } from '../../data/patients';
 import { useLocalStorage } from '../../lib/useLocalStorage';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/openwa';
 import { useCaptureInvoice } from '../../lib/useCaptureInvoice';
+import { useClinic } from '../../context/ClinicContext';
 
 const buildUpiUrl = ({ vpa, name, amount, note }) => {
+  const { clinic } = useClinic();
   const params = new URLSearchParams({
     pa: vpa,
     pn: name,
@@ -24,6 +26,7 @@ const qrSrc = (data) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=260x260&qzone=2&data=${encodeURIComponent(data)}`;
 
 export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
+  const { clinic } = useClinic();
   const [step, setStep] = useState(1); // 1: method, 2: details, 3: success
   const [method, setMethod] = useState(null); // 'cash' | 'upi'
   const [amount, setAmount] = useState(0);
@@ -64,6 +67,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
     : '';
 
   const handleSelectMethod = (m) => {
+  const { clinic } = useClinic();
     if (m === 'upi' && !doctor?.upiId) {
       toast.error(`No UPI ID on file for ${doctor?.name || 'this doctor'}. Add one in the Doctors page.`);
       return;
@@ -73,6 +77,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
   };
 
   const handleConfirmPayment = () => {
+  const { clinic } = useClinic();
     if (amount <= 0 || amount > balance) {
       toast.error(`Enter a valid amount up to ₹${balance.toLocaleString()}`);
       return;
@@ -92,7 +97,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
     const message = [
       `Dear ${invoice.patient},`,
       ``,
-      `Thank you for your payment at Devnayan Dental Clinic.`,
+      `Thank you for your payment at ${clinic.name}.`,
       ``,
       `Receipt No.  : REC-${invoice.id}`,
       `Treatment    : ${invoice.treatment}`,
@@ -109,7 +114,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
         : `Your account is fully settled. Thank you.`,
       ``,
       `Regards,`,
-      `Devnayan Dental Clinic`,
+      `${clinic.name}`,
     ].filter(s => s !== undefined).join('\n');
 
     const toastId = toast.loading('Generating payment receipt PDF…');
@@ -139,10 +144,12 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
   };
 
   const copyUpiId = () => {
+  const { clinic } = useClinic();
     navigator.clipboard?.writeText(doctor?.upiId || '').then(() => toast.success('UPI ID copied'));
   };
 
   const copyUpiLink = () => {
+  const { clinic } = useClinic();
     navigator.clipboard?.writeText(upiUrl).then(() => toast.success('UPI link copied'));
   };
 
@@ -394,7 +401,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
             {/* Header */}
             <div style={{ background: 'linear-gradient(135deg,#10B981,#059669)', padding: '20px 24px', borderRadius: 12, color: '#fff', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 17 }}>Devnayan Dental Clinic</div>
+                <div style={{ fontWeight: 700, fontSize: 17 }}>{clinic.name}</div>
                 <div style={{ fontSize: 10, opacity: 0.85, marginTop: 2 }}>Advance Dental Care Hospital</div>
                 <div style={{ fontSize: 9, opacity: 0.7, marginTop: 6 }}>Lal Bahadur Shastri Rd, Bardoli, Gujarat</div>
               </div>
@@ -459,7 +466,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
 
             {/* Footer */}
             <div style={{ marginTop: 20, paddingTop: 12, borderTop: '1px solid #f3f4f6', textAlign: 'center', fontSize: 10, color: '#9ca3af', fontStyle: 'italic' }}>
-              Thank you for choosing Devnayan Dental Clinic · Computer-generated receipt
+              Thank you for choosing ${clinic.name} · Computer-generated receipt
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Clock, Envelope, Globe, WhatsappLogo } from '@phosphor-icons/react';
 import AppLayout from '../components/layout/AppLayout';
+import { useClinic } from '../context/ClinicContext';
 
 const schedule = [
   { day: 'Monday', time: '9am - 1pm & 3pm - 8pm' },
@@ -17,6 +18,7 @@ const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const today = days[new Date().getDay()];
 
 export default function Profile() {
+  const { clinic } = useClinic();
   return (
     <AppLayout>
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-6">
@@ -32,7 +34,7 @@ export default function Profile() {
               D
             </div>
             <div>
-              <h2 className="text-xl font-bold">Devnayan Dental Clinic</h2>
+              <h2 className="text-xl font-bold">{clinic.name}</h2>
               <p className="text-sm text-primary font-medium">Advance Dental Care Hospital</p>
             </div>
           </div>
@@ -102,7 +104,7 @@ export default function Profile() {
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-primary/15 text-primary font-bold text-xl flex items-center justify-center">CS</div>
             <div>
-              <div className="font-bold text-lg">Dr. Chintan Sayania</div>
+              <div className="font-bold text-lg">{clinic.doctorName}</div>
               <div className="text-sm text-primary font-medium">B.D.S. | Dental Surgeon & Consultant</div>
               <div className="text-xs text-text-muted mt-1">10+ years of experience • 5,000+ patients treated</div>
             </div>

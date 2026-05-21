@@ -11,13 +11,16 @@ import {
   ChatTeardrop,
   SignOut,
   Tooth,
-  X
+  X,
+  EnvelopeSimple
 } from '@phosphor-icons/react';
 import clsx from 'clsx';
+import { useClinic } from '../../context/ClinicContext';
 
 const menuMain = [
   { label: 'Dashboard', icon: SquaresFour, path: '/' },
   { label: 'Appointments', icon: ChatCircleDots, path: '/appointments' },
+  { label: 'Inquiries', icon: EnvelopeSimple, path: '/inquiries' },
   { label: 'Patients', icon: Users, path: '/patients' },
   { label: 'Billing', icon: ShoppingCart, path: '/billing' },
   { label: 'Inventory', icon: Package, path: '/inventory' },
@@ -29,6 +32,7 @@ const menuFooter = [
 ];
 
 const MenuItem = ({ item, isActive, onClick }) => {
+  const { clinic } = useClinic();
   const Icon = item.icon;
   const content = (
     <li
@@ -56,6 +60,7 @@ const MenuItem = ({ item, isActive, onClick }) => {
 };
 
 export default function Sidebar({ onClose }) {
+  const { clinic, clinics, activeClinicId, setClinicId } = useClinic();
   const location = useLocation();
 
   return (
@@ -65,7 +70,7 @@ export default function Sidebar({ onClose }) {
           <div className="bg-primary text-white w-8 h-8 flex items-center justify-center rounded-lg shadow-sm">
             <Tooth size={18} weight="bold" />
           </div>
-          <span className="text-text-main">Devnayan</span>
+          <span className="text-text-main">{clinic.name.split(" ")[0]}</span>
         </div>
         {onClose ? (
           <button onClick={onClose} className="text-text-muted hover:text-text-main transition-colors">
@@ -96,12 +101,19 @@ export default function Sidebar({ onClose }) {
       </div>
 
       <div className="p-4 border-t border-border-color space-y-3">
-        <div className="flex items-center gap-2.5 p-2.5 border border-border-color rounded-xl cursor-pointer hover:bg-bg-body transition-colors">
-          <div className="w-8 h-8 rounded-md bg-bg-body border border-border-color text-text-main font-semibold flex items-center justify-center text-xs">
-            CS
-          </div>
-          <div className="text-[13px] font-medium text-text-main flex-1">Dr. Chintan</div>
-          <SignOut size={16} className="text-text-muted" />
+        <div className="flex flex-col gap-1.5 border border-border-color p-2.5 rounded-xl bg-bg-body">
+          <label className="text-[10px] text-text-muted font-semibold uppercase tracking-wide px-1">Active Clinic</label>
+          <select
+            value={activeClinicId}
+            onChange={(e) => setClinicId(e.target.value)}
+            className="w-full bg-bg-card border border-border-color text-text-main text-xs rounded-lg p-2 focus:outline-none focus:border-primary transition-colors cursor-pointer"
+          >
+            {Object.values(clinics).map(c => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
         <p className="text-[10px] text-text-muted text-center">
           Powered by{" "}

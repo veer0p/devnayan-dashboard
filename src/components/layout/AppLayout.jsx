@@ -6,13 +6,16 @@ import ThemeToggle from '../ui/ThemeToggle';
 import WhatsAppStatus from './WhatsAppStatus';
 import { List, X, MagnifyingGlass } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useClinic } from '../../context/ClinicContext';
 
 export default function AppLayout({ children }) {
+  const { clinic } = useClinic();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   useEffect(() => {
     const handler = (e) => {
+  const { clinic } = useClinic();
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setMobileSearchOpen(true);
@@ -63,7 +66,7 @@ export default function AppLayout({ children }) {
             >
               <List size={22} weight="bold" />
             </button>
-            <span className="font-bold text-lg text-primary">Devnayan</span>
+            <span className="font-bold text-lg text-primary">{clinic.name.split(" ")[0]}</span>
             <div className="flex items-center gap-2">
               <WhatsAppStatus />
               <ThemeToggle size="sm" />

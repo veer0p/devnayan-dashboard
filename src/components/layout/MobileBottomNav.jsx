@@ -11,8 +11,10 @@ import {
   Stethoscope,
   ChatTeardrop,
   X,
+  EnvelopeSimple,
 } from '@phosphor-icons/react';
 import clsx from 'clsx';
+import { useClinic } from '../../context/ClinicContext';
 
 const primary = [
   { label: 'Home', icon: SquaresFour, path: '/' },
@@ -22,12 +24,14 @@ const primary = [
 ];
 
 const more = [
+  { label: 'Inquiries', icon: EnvelopeSimple, path: '/inquiries' },
   { label: 'Inventory', icon: Package, path: '/inventory' },
   { label: 'Doctors', icon: Stethoscope, path: '/doctors' },
   { label: 'Help', icon: ChatTeardrop, path: '/help' },
 ];
 
 export default function MobileBottomNav() {
+  const { clinic } = useClinic();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const isActive = (path) => location.pathname === path;

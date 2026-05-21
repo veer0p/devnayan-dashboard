@@ -30,6 +30,7 @@ import { useLocalStorage } from '../lib/useLocalStorage';
 import { useAppointmentReminders } from '../lib/useAppointmentReminders';
 import { mockPatientsList } from '../data/patients';
 import { sendWhatsAppMessage } from '../lib/openwa';
+import { useClinic } from '../context/ClinicContext';
 
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -58,6 +59,7 @@ const statusTone = {
 
 // --- Hover tooltip (rich, portaled, no browser title) ----------------------
 const HoverPopover = ({ event, doctor, palette, anchorRect }) => {
+  const { clinic } = useClinic();
   if (!anchorRect) return null;
 
   const startStr = format(event.start, 'h:mm a');
@@ -155,6 +157,7 @@ const HoverPopover = ({ event, doctor, palette, anchorRect }) => {
 
 // --- Event block (flat, clean, no chip, time on hover only) ----------------
 const EventChip = ({ event, doctors, view }) => {
+  const { clinic } = useClinic();
   const doctor = doctors.find(d => d.id === event.doctorId);
   const palette = paletteFromDoctor(doctor);
   const durationMins = Math.max(0, (event.end - event.start) / 60000);
@@ -165,6 +168,7 @@ const EventChip = ({ event, doctors, view }) => {
   const timerRef = useRef(null);
 
   const handleEnter = () => {
+  const { clinic } = useClinic();
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (ref.current) {
@@ -174,6 +178,7 @@ const EventChip = ({ event, doctors, view }) => {
     }, 250);
   };
   const handleLeave = () => {
+  const { clinic } = useClinic();
     clearTimeout(timerRef.current);
     setHovered(false);
   };
@@ -244,6 +249,7 @@ const EventChip = ({ event, doctors, view }) => {
 
 // --- Compute toolbar label from view + date --------------------------------
 const computeLabel = (view, date) => {
+  const { clinic } = useClinic();
   if (view === 'day')   return format(date, 'EEEE, d MMM yyyy');
   if (view === 'month') return format(date, 'MMMM yyyy');
   if (view === 'week') {
@@ -262,6 +268,7 @@ const computeLabel = (view, date) => {
 
 // --- Toolbar (parent-driven; lives outside the Calendar) -------------------
 const PageToolbar = ({ view, label, onNavigate, onViewChange, hideNav }) => {
+  const { clinic } = useClinic();
   const views = [
     { id: 'day',    label: 'Day' },
     { id: 'week',   label: 'Week' },
@@ -332,6 +339,7 @@ const PageToolbar = ({ view, label, onNavigate, onViewChange, hideNav }) => {
 
 // --- Desktop List view (proper table — matches Patients/Billing styling) ---
 const AppointmentsTable = ({ appointments, doctors, onSelect, onRemind }) => {
+  const { clinic } = useClinic();
   const sorted = useMemo(
     () => [...appointments].sort((a, b) => new Date(a.start) - new Date(b.start)),
     [appointments]
@@ -436,6 +444,7 @@ const AppointmentsTable = ({ appointments, doctors, onSelect, onRemind }) => {
 
 // --- Mobile list view -------------------------------------------------------
 const getDayLabel = (date) => {
+  const { clinic } = useClinic();
   if (isToday(date)) return 'Today';
   if (isTomorrow(date)) return 'Tomorrow';
   if (isYesterday(date)) return 'Yesterday';
@@ -443,6 +452,7 @@ const getDayLabel = (date) => {
 };
 
 const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
+  const { clinic } = useClinic();
   const grouped = appointments.reduce((acc, app) => {
     const dateKey = format(new Date(app.start), 'yyyy-MM-dd');
     if (!acc[dateKey]) acc[dateKey] = [];
@@ -574,6 +584,7 @@ const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
 };
 
 const eventsOverlap = (a, b) => {
+  const { clinic } = useClinic();
   const aStart = new Date(a.start).getTime();
   const aEnd = new Date(a.end).getTime();
   const bStart = new Date(b.start).getTime();
@@ -582,6 +593,7 @@ const eventsOverlap = (a, b) => {
 };
 
 export default function Appointments() {
+  const { clinic } = useClinic();
   const [appointments, setAppointments] = useLocalStorage('appointments', mockAppointments);
   const [doctors] = useLocalStorage('doctors', mockDoctors);
   const [patients] = useLocalStorage('patients', mockPatientsList);
@@ -602,6 +614,7 @@ export default function Appointments() {
   // Automatically fall back from multi-column week view to clean daily column list on mobile viewports
   useEffect(() => {
     const handleResize = () => {
+  const { clinic } = useClinic();
       if (window.innerWidth < 768 && currentView === 'week') {
         setCurrentView('day');
       }
@@ -650,12 +663,14 @@ export default function Appointments() {
   }), [filteredAppointments]);
 
   const handleSelectSlot = () => {
+  const { clinic } = useClinic();
     if (isModalOpen || selectedEvent || deletingAppointment || conflictEvents) return;
     setEditingAppointment(null);
     setIsModalOpen(true);
   };
 
   const handleSelectEvent = (event) => {
+  const { clinic } = useClinic();
     if (doctorFilter === 'All') {
       const overlapping = filteredAppointments.filter(a =>
         a.id !== event.id && eventsOverlap(a, event)
@@ -688,7 +703,7 @@ export default function Appointments() {
     const message = [
       `Dear ${app.patientName},`,
       ``,
-      `This is a reminder for your upcoming appointment at Devnayan Dental Clinic.`,
+      `This is a reminder for your upcoming appointment at ${clinic.name}.`,
       ``,
       `Treatment    : ${app.treatmentName}`,
       `Date         : ${format(startDate, 'EEEE, d MMMM yyyy')}`,
@@ -703,7 +718,7 @@ export default function Appointments() {
       `We look forward to seeing you.`,
       ``,
       `Regards,`,
-      `Devnayan Dental Clinic`,
+      `${clinic.name}`,
     ].filter(s => s !== undefined).join('\n');
 
     const toastId = toast.loading(`Sending reminder to ${app.patientName}...`);
@@ -724,6 +739,7 @@ export default function Appointments() {
   };
 
   const handleSubmit = (appointment, isEdit) => {
+  const { clinic } = useClinic();
     if (isEdit) {
       setAppointments(prev => prev.map(a => a.id === appointment.id ? appointment : a));
       setSelectedEvent({ ...appointment, title: appointment.patientName });
@@ -733,6 +749,7 @@ export default function Appointments() {
   };
 
   const openEdit = () => {
+  const { clinic } = useClinic();
     if (!selectedEvent) return;
     setEditingAppointment(selectedEvent);
     setIsModalOpen(true);
@@ -740,11 +757,13 @@ export default function Appointments() {
   };
 
   const openAdd = () => {
+  const { clinic } = useClinic();
     setEditingAppointment(null);
     setIsModalOpen(true);
   };
 
   const handleDelete = () => {
+  const { clinic } = useClinic();
     if (!deletingAppointment) return;
     setAppointments(prev => prev.filter(a => a.id !== deletingAppointment.id));
     toast.success('Appointment deleted');
@@ -762,6 +781,7 @@ export default function Appointments() {
   }, [filteredAppointments]);
 
   const handleNavigate = (action) => {
+  const { clinic } = useClinic();
     if (action === 'TODAY') { setCurrentDate(new Date()); return; }
     const factor = action === 'NEXT' ? 1 : -1;
     setCurrentDate(prev => {

@@ -3,19 +3,21 @@ import { motion } from 'framer-motion';
 import { WhatsappLogo, PencilSimple, Trash, Phone, CaretRight } from '@phosphor-icons/react';
 import StatusBadge from '../ui/StatusBadge';
 import WhatsAppMessageDialog from '../ui/WhatsAppMessageDialog';
+import { useClinic } from '../../context/ClinicContext';
 
 export default function PatientTable({ patients, onRowClick, onEdit, onDelete }) {
+  const { clinic } = useClinic();
   const [waPatient, setWaPatient] = useState(null); // patient to message via dialog
 
   const defaultMessage = (patient) => [
     `Dear ${patient.name},`,
     ``,
-    `Thank you for visiting Devnayan Dental Clinic.`,
+    `Thank you for visiting ${clinic.name}.`,
     ``,
     `We hope your treatment is going well. Please do not hesitate to reach out if you have any questions or concerns.`,
     ``,
     `Regards,`,
-    `Devnayan Dental Clinic`,
+    `${clinic.name}`,
     `+91 84870 05334`,
   ].join('\n');
 

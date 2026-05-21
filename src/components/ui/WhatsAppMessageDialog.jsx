@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X, WhatsappLogo, PaperPlaneTilt } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { sendWhatsAppMessage } from '../../lib/openwa';
+import { useClinic } from '../../context/ClinicContext';
 
 /**
  * Beautiful custom dialog for composing and sending a WhatsApp message to a patient.
@@ -16,6 +17,7 @@ import { sendWhatsAppMessage } from '../../lib/openwa';
  *  - defaultMessage: string (optional) — pre-filled message text
  */
 export default function WhatsAppMessageDialog({ patient, isOpen, onClose, defaultMessage = '' }) {
+  const { clinic } = useClinic();
   const [message, setMessage] = useState(defaultMessage);
   const [sending, setSending] = useState(false);
   const textareaRef = useRef(null);
@@ -55,6 +57,7 @@ export default function WhatsAppMessageDialog({ patient, isOpen, onClose, defaul
   };
 
   const handleKeyDown = (e) => {
+  const { clinic } = useClinic();
     // Ctrl+Enter or Cmd+Enter to send
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -111,7 +114,7 @@ export default function WhatsAppMessageDialog({ patient, isOpen, onClose, defaul
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     rows={5}
-                    placeholder={`Hi ${patient.name},\n\nThank you for visiting Devnayan Dental Clinic.\n\nRegards,\nDevnayan Dental Clinic`}
+                    placeholder={`Hi ${patient.name},\n\nThank you for visiting ${clinic.name}.\n\nRegards,\n${clinic.name}`}
                     className="w-full bg-bg-body border border-border-color rounded-xl px-4 py-3 text-sm text-text-main placeholder-text-muted/50 resize-none focus:outline-none focus:border-[#25D366]/60 focus:ring-1 focus:ring-[#25D366]/30 transition-colors leading-relaxed"
                   />
                   <div className="flex items-center justify-between mt-2">

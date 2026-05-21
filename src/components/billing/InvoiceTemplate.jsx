@@ -7,9 +7,10 @@ import { mockDoctors } from '../../data/doctors';
 import { useLocalStorage } from '../../lib/useLocalStorage';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/openwa';
 import { useCaptureInvoice } from '../../lib/useCaptureInvoice';
+import { useClinic } from '../../context/ClinicContext';
 
 const CLINIC = {
-  name: 'Devnayan Dental Clinic',
+  name: '${clinic.name}',
   tagline: 'Advance Dental Care Hospital',
   addressLine1: 'B 394601, 6-7, Lal Bahadur Shastri Rd,',
   addressLine2: 'Rushikesh Nagar, Bardoli, Gujarat 394601',
@@ -18,6 +19,7 @@ const CLINIC = {
 };
 
 export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
+  const { clinic } = useClinic();
   const [patients] = useLocalStorage('patients', mockPatientsList);
   const [doctors] = useLocalStorage('doctors', mockDoctors);
   const { capturePdf } = useCaptureInvoice();
@@ -37,6 +39,7 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
   const dateStr = new Date(invoice.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const handlePrint = () => {
+  const { clinic } = useClinic();
     document.body.classList.add('printing-invoice');
     requestAnimationFrame(() => {
       window.print();
@@ -54,7 +57,7 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
     const message = [
       `Dear ${invoice.patient},`,
       ``,
-      `Please find attached your invoice from Devnayan Dental Clinic.`,
+      `Please find attached your invoice from ${clinic.name}.`,
       ``,
       `Invoice No.  : ${invoice.id}`,
       `Treatment    : ${invoice.treatment}`,
@@ -74,7 +77,7 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
       `For any queries, please contact us at +91 84870 05334.`,
       ``,
       `Regards,`,
-      `Devnayan Dental Clinic`,
+      `${clinic.name}`,
     ].filter(s => s !== undefined).join('\n');
 
     const toastId = toast.loading('Generating invoice PDF…');

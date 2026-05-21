@@ -7,6 +7,7 @@ import Billing from './pages/Billing';
 import Inventory from './pages/Inventory';
 import Doctors from './pages/Doctors';
 import Help from './pages/Help';
+import Inquiries from './pages/Inquiries';
 import PublicPayment from './pages/PublicPayment';
 import MobileBottomNav from './components/layout/MobileBottomNav';
 
@@ -19,6 +20,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/appointments" element={<Appointments />} />
+        <Route path="/inquiries" element={<Inquiries />} />
         <Route path="/patients" element={<Patients />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/inventory" element={<Inventory />} />

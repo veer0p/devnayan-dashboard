@@ -17,6 +17,7 @@ import { mockDoctors } from '../data/doctors';
 import { useLocalStorage } from '../lib/useLocalStorage';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/openwa';
 import { useCaptureInvoice } from '../lib/useCaptureInvoice';
+import { useClinic } from '../context/ClinicContext';
 
 const filterOptions = [
   { value: 'All', label: 'All Status' },
@@ -24,6 +25,7 @@ const filterOptions = [
 ];
 
 export default function Billing() {
+  const { clinic } = useClinic();
   const [invoices, setInvoices] = useLocalStorage('invoices', mockInvoices);
   const [patients] = useLocalStorage('patients', mockPatientsList);
   const [doctors] = useLocalStorage('doctors', mockDoctors);
@@ -73,17 +75,20 @@ export default function Billing() {
   }, [invoices]);
 
   const openAdd = () => {
+  const { clinic } = useClinic();
     setEditingInvoice(null);
     setIsModalOpen(true);
   };
 
   const openEdit = (inv) => {
+  const { clinic } = useClinic();
     setEditingInvoice(inv);
     setIsModalOpen(true);
     setViewingInvoice(null);
   };
 
   const handleSubmit = (invoice, isEdit) => {
+  const { clinic } = useClinic();
     if (isEdit) {
       setInvoices(prev => prev.map(i => i.id === invoice.id ? invoice : i));
       return;
@@ -99,6 +104,7 @@ export default function Billing() {
   };
 
   const handleDelete = () => {
+  const { clinic } = useClinic();
     if (!deletingInvoice) return;
     setInvoices(prev => prev.filter(i => i.id !== deletingInvoice.id));
     toast.success(`${deletingInvoice.id} deleted`);
@@ -107,6 +113,7 @@ export default function Billing() {
   };
 
   const handlePayment = ({ amount }) => {
+  const { clinic } = useClinic();
     if (!payingInvoice) return;
     setInvoices(prev => prev.map(inv => {
       if (inv.id !== payingInvoice.id) return inv;
@@ -135,7 +142,7 @@ export default function Billing() {
       ``,
       inv.status === 'Paid'
         ? `Your invoice has been fully settled. Thank you for your prompt payment.`
-        : `Please find below the details of your outstanding invoice from Devnayan Dental Clinic.`,
+        : `Please find below the details of your outstanding invoice from ${clinic.name}.`,
       ``,
       `Invoice No.  : ${inv.id}`,
       `Treatment    : ${inv.treatment}`,
@@ -150,12 +157,12 @@ export default function Billing() {
       ``,
       balance > 0
         ? `Please pay the balance at your earliest convenience.\nPay online: ${payLink}\n\nScan the QR code in the attached PDF to pay via UPI (GPay / PhonePe / Paytm).`
-        : `We appreciate your continued trust in Devnayan Dental Clinic.`,
+        : `We appreciate your continued trust in ${clinic.name}.`,
       ``,
       `For any queries, contact us at +91 84870 05334.`,
       ``,
       `Regards,`,
-      `Devnayan Dental Clinic`,
+      `${clinic.name}`,
     ].filter(s => s !== undefined).join('\n');
 
     const toastId = toast.loading('Generating invoice PDF…');
@@ -411,7 +418,7 @@ export default function Billing() {
               {/* Header banner */}
               <div style={{ background: 'linear-gradient(135deg,#C8902B,#B07D24)', padding: '20px 28px', borderRadius: 12, color: '#fff', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontSize: 20, fontWeight: 700 }}>Devnayan Dental Clinic</div>
+                  <div style={{ fontSize: 20, fontWeight: 700 }}>{clinic.name}</div>
                   <div style={{ fontSize: 10, opacity: 0.85, marginTop: 3 }}>Advance Dental Care Hospital</div>
                   <div style={{ fontSize: 9, opacity: 0.7, marginTop: 8 }}>B 394601, 6-7, Lal Bahadur Shastri Rd, Bardoli, Gujarat</div>
                   <div style={{ fontSize: 9, opacity: 0.7, marginTop: 2 }}>+91 84870 05334</div>
@@ -494,7 +501,7 @@ export default function Billing() {
 
               {/* Footer */}
               <div style={{ paddingTop: 14, borderTop: '1px solid #e5e7eb', textAlign: 'center', fontSize: 10, color: '#9ca3af', fontStyle: 'italic' }}>
-                Thank you for choosing Devnayan Dental Clinic · Computer-generated invoice
+                Thank you for choosing ${clinic.name} · Computer-generated invoice
               </div>
 
             </div>

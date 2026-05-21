@@ -18,9 +18,10 @@ import { useLocalStorage } from '../lib/useLocalStorage';
 import { mockInvoices } from '../data/billing';
 import { mockPatientsList } from '../data/patients';
 import { mockDoctors } from '../data/doctors';
+import { useClinic } from '../context/ClinicContext';
 
 const CLINIC = {
-  name: 'Devnayan Dental Clinic',
+  name: '${clinic.name}',
   tagline: 'Advance Dental Care Hospital',
   address: 'Lal Bahadur Shastri Rd, Rushikesh Nagar, Bardoli, Gujarat 394601',
   phone: '+91 84870 05334',
@@ -28,6 +29,7 @@ const CLINIC = {
 };
 
 const buildUpiUrl = ({ vpa, name, amount, note }) => {
+  const { clinic } = useClinic();
   const params = new URLSearchParams({
     pa: vpa,
     pn: name,
@@ -42,6 +44,7 @@ const qrSrc = (data) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=260x260&qzone=2&data=${encodeURIComponent(data)}`;
 
 export default function PublicPayment() {
+  const { clinic } = useClinic();
   const { invoiceId } = useParams();
   const [invoices, setInvoices] = useLocalStorage('invoices', mockInvoices);
   const [patients] = useLocalStorage('patients', mockPatientsList);
@@ -91,7 +94,7 @@ export default function PublicPayment() {
 
   const balance = Math.max(0, invoice.amount - invoice.paid);
   const upiId = doctor?.upiId || 'atodariyaveer1331@oksbi'; // Fallback to developer UPI
-  const doctorName = doctor?.name || 'Devnayan Dental Clinic';
+  const doctorName = doctor?.name || '${clinic.name}';
 
   const upiUrl = buildUpiUrl({
     vpa: upiId,
@@ -101,6 +104,7 @@ export default function PublicPayment() {
   });
 
   const handleSimulatePayment = () => {
+  const { clinic } = useClinic();
     setIsProcessing(true);
     setTimeout(() => {
       // Record payment in state (localStorage)
@@ -119,6 +123,7 @@ export default function PublicPayment() {
   };
 
   const copyUpiId = () => {
+  const { clinic } = useClinic();
     navigator.clipboard?.writeText(upiId).then(() => toast.success('UPI ID copied to clipboard!'));
   };
 
@@ -272,7 +277,7 @@ export default function PublicPayment() {
       {/* Footer Branding */}
       <div className="w-full max-w-xl text-center mt-8 text-xs text-text-muted space-y-1">
         <div>Having issues with payment?</div>
-        <div>Contact Devnayan Dental Clinic at <a href={`tel:${CLINIC.phone}`} className="font-semibold hover:underline text-text-main">{CLINIC.phone}</a></div>
+        <div>Contact ${clinic.name} at <a href={`tel:${CLINIC.phone}`} className="font-semibold hover:underline text-text-main">{CLINIC.phone}</a></div>
       </div>
     </div>
   );
