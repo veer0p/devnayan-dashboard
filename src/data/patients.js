@@ -19,8 +19,8 @@ export const mockPatientsList = [
       '48': 'extracted'
     },
     history: [
-      { id: 'h1', date: '2026-04-10', treatment: 'General Consultation', doctor: '${clinic.doctorName}', cost: 500, status: 'Paid', notes: 'Routine checkup. Found minor cavity on 26.' },
-      { id: 'h2', date: '2025-08-22', treatment: 'Teeth Whitening', doctor: '${clinic.doctorName}', cost: 3500, status: 'Paid', notes: 'Laser whitening. Patient satisfied.' }
+      { id: 'h1', date: '2026-04-10', treatment: 'General Consultation', doctor: 'Lead Dentist', cost: 500, status: 'Paid', notes: 'Routine checkup. Found minor cavity on 26.' },
+      { id: 'h2', date: '2025-08-22', treatment: 'Teeth Whitening', doctor: 'Lead Dentist', cost: 3500, status: 'Paid', notes: 'Laser whitening. Patient satisfied.' }
     ]
   },
   {
@@ -42,7 +42,7 @@ export const mockPatientsList = [
       '21': 'crown'
     },
     history: [
-      { id: 'h3', date: '2026-05-01', treatment: 'Crown Preparation', doctor: '${clinic.doctorName}', cost: 5000, status: 'Pending', notes: 'Prepared 11 and 21 for crowns. Temps placed.' }
+      { id: 'h3', date: '2026-05-01', treatment: 'Crown Preparation', doctor: 'Lead Dentist', cost: 5000, status: 'Pending', notes: 'Prepared 11 and 21 for crowns. Temps placed.' }
     ]
   },
   {
@@ -68,8 +68,8 @@ export const mockPatientsList = [
       '46': 'filled'
     },
     history: [
-      { id: 'h4', date: '2025-11-15', treatment: 'Extraction', doctor: '${clinic.doctorName}', cost: 2000, status: 'Paid', notes: 'Extracted 48 (impacted wisdom). Sutures placed.' },
-      { id: 'h5', date: '2025-11-22', treatment: 'Follow-up', doctor: '${clinic.doctorName}', cost: 0, status: 'Paid', notes: 'Removed sutures. Healing well.' }
+      { id: 'h4', date: '2025-11-15', treatment: 'Extraction', doctor: 'Lead Dentist', cost: 2000, status: 'Paid', notes: 'Extracted 48 (impacted wisdom). Sutures placed.' },
+      { id: 'h5', date: '2025-11-22', treatment: 'Follow-up', doctor: 'Lead Dentist', cost: 0, status: 'Paid', notes: 'Removed sutures. Healing well.' }
     ]
   },
   {
@@ -91,7 +91,7 @@ export const mockPatientsList = [
       '15': 'needs_treatment'
     },
     history: [
-      { id: 'h6', date: '2025-11-08', treatment: 'Emergency Consultation', doctor: '${clinic.doctorName}', cost: 800, status: 'Paid', notes: 'Pain in upper right quadrant. Prescribed antibiotics.' }
+      { id: 'h6', date: '2025-11-08', treatment: 'Emergency Consultation', doctor: 'Lead Dentist', cost: 800, status: 'Paid', notes: 'Pain in upper right quadrant. Prescribed antibiotics.' }
     ]
   },
   {
@@ -110,7 +110,7 @@ export const mockPatientsList = [
     medicalAlerts: [],
     teethConditions: {},
     history: [
-      { id: 'h7', date: '2026-05-10', treatment: 'General Consultation', doctor: '${clinic.doctorName}', cost: 500, status: 'Pending', notes: 'First visit. Recommended scaling.' }
+      { id: 'h7', date: '2026-05-10', treatment: 'General Consultation', doctor: 'Lead Dentist', cost: 500, status: 'Pending', notes: 'First visit. Recommended scaling.' }
     ]
   },
   {

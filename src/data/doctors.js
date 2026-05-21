@@ -12,7 +12,7 @@ export const doctorSpecialties = [
 export const mockDoctors = [
   {
     id: 'd1',
-    name: '${clinic.doctorName}',
+    name: 'Lead Dentist',
     qualification: 'B.D.S.',
     specialty: 'General Dentist',
     phone: '+91 99135 20707',

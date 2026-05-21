@@ -168,7 +168,6 @@ const EventChip = ({ event, doctors, view }) => {
   const timerRef = useRef(null);
 
   const handleEnter = () => {
-  const { clinic } = useClinic();
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (ref.current) {
@@ -178,7 +177,6 @@ const EventChip = ({ event, doctors, view }) => {
     }, 250);
   };
   const handleLeave = () => {
-  const { clinic } = useClinic();
     clearTimeout(timerRef.current);
     setHovered(false);
   };
@@ -249,7 +247,6 @@ const EventChip = ({ event, doctors, view }) => {
 
 // --- Compute toolbar label from view + date --------------------------------
 const computeLabel = (view, date) => {
-  const { clinic } = useClinic();
   if (view === 'day')   return format(date, 'EEEE, d MMM yyyy');
   if (view === 'month') return format(date, 'MMMM yyyy');
   if (view === 'week') {
@@ -444,7 +441,6 @@ const AppointmentsTable = ({ appointments, doctors, onSelect, onRemind }) => {
 
 // --- Mobile list view -------------------------------------------------------
 const getDayLabel = (date) => {
-  const { clinic } = useClinic();
   if (isToday(date)) return 'Today';
   if (isTomorrow(date)) return 'Tomorrow';
   if (isYesterday(date)) return 'Yesterday';
@@ -584,7 +580,6 @@ const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
 };
 
 const eventsOverlap = (a, b) => {
-  const { clinic } = useClinic();
   const aStart = new Date(a.start).getTime();
   const aEnd = new Date(a.end).getTime();
   const bStart = new Date(b.start).getTime();
@@ -614,7 +609,6 @@ export default function Appointments() {
   // Automatically fall back from multi-column week view to clean daily column list on mobile viewports
   useEffect(() => {
     const handleResize = () => {
-  const { clinic } = useClinic();
       if (window.innerWidth < 768 && currentView === 'week') {
         setCurrentView('day');
       }
@@ -663,14 +657,12 @@ export default function Appointments() {
   }), [filteredAppointments]);
 
   const handleSelectSlot = () => {
-  const { clinic } = useClinic();
     if (isModalOpen || selectedEvent || deletingAppointment || conflictEvents) return;
     setEditingAppointment(null);
     setIsModalOpen(true);
   };
 
   const handleSelectEvent = (event) => {
-  const { clinic } = useClinic();
     if (doctorFilter === 'All') {
       const overlapping = filteredAppointments.filter(a =>
         a.id !== event.id && eventsOverlap(a, event)
@@ -739,7 +731,6 @@ export default function Appointments() {
   };
 
   const handleSubmit = (appointment, isEdit) => {
-  const { clinic } = useClinic();
     if (isEdit) {
       setAppointments(prev => prev.map(a => a.id === appointment.id ? appointment : a));
       setSelectedEvent({ ...appointment, title: appointment.patientName });
@@ -749,7 +740,6 @@ export default function Appointments() {
   };
 
   const openEdit = () => {
-  const { clinic } = useClinic();
     if (!selectedEvent) return;
     setEditingAppointment(selectedEvent);
     setIsModalOpen(true);
@@ -757,13 +747,11 @@ export default function Appointments() {
   };
 
   const openAdd = () => {
-  const { clinic } = useClinic();
     setEditingAppointment(null);
     setIsModalOpen(true);
   };
 
   const handleDelete = () => {
-  const { clinic } = useClinic();
     if (!deletingAppointment) return;
     setAppointments(prev => prev.filter(a => a.id !== deletingAppointment.id));
     toast.success('Appointment deleted');
@@ -781,7 +769,6 @@ export default function Appointments() {
   }, [filteredAppointments]);
 
   const handleNavigate = (action) => {
-  const { clinic } = useClinic();
     if (action === 'TODAY') { setCurrentDate(new Date()); return; }
     const factor = action === 'NEXT' ? 1 : -1;
     setCurrentDate(prev => {
