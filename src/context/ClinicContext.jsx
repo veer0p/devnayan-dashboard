@@ -4,9 +4,9 @@ import { clinics } from "../data/clinics";
 const ClinicContext = createContext(null);
 
 export const ClinicProvider = ({ children }) => {
-  // Initialize state from LocalStorage, fallback to "devnayan"
   const [activeClinicId, setActiveClinicId] = useState(() => {
-    const saved = localStorage.getItem("dentease.dashboard_clinic");
+    const params = new URLSearchParams(window.location.search);
+    const saved = params.get("clinic");
     return saved && clinics[saved] ? saved : "devnayan";
   });
 
@@ -15,7 +15,9 @@ export const ClinicProvider = ({ children }) => {
   const setClinicId = (id) => {
     if (clinics[id]) {
       setActiveClinicId(id);
-      localStorage.setItem("dentease.dashboard_clinic", id);
+      const url = new URL(window.location.href);
+      url.searchParams.set("clinic", id);
+      window.history.pushState({}, "", url.toString());
     }
   };
 

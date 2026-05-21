@@ -56,7 +56,8 @@ const MenuItem = ({ item, isActive, onClick }) => {
     </li>
   );
 
-  return item.path ? <Link to={item.path}>{content}</Link> : content;
+  const location = useLocation();
+  return item.path ? <Link to={{ pathname: item.path, search: location.search }}>{content}</Link> : content;
 };
 
 export default function Sidebar({ onClose }) {
@@ -101,20 +102,6 @@ export default function Sidebar({ onClose }) {
       </div>
 
       <div className="p-4 border-t border-border-color space-y-3">
-        <div className="flex flex-col gap-1.5 border border-border-color p-2.5 rounded-xl bg-bg-body">
-          <label className="text-[10px] text-text-muted font-semibold uppercase tracking-wide px-1">Active Clinic</label>
-          <select
-            value={activeClinicId}
-            onChange={(e) => setClinicId(e.target.value)}
-            className="w-full bg-bg-card border border-border-color text-text-main text-xs rounded-lg p-2 focus:outline-none focus:border-primary transition-colors cursor-pointer"
-          >
-            {Object.values(clinics).map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
         <p className="text-[10px] text-text-muted text-center">
           Powered by{" "}
           <a href="https://viransihq.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">
