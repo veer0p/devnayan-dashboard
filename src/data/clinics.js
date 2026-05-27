@@ -97,5 +97,19 @@ export const clinics = {
     website: null,
     mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.524051775043!2d73.10383738571413!3d21.131533134089402!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be0670e822f7733%3A0x64592014c0167185!2sVATSALYA%20DENTAL%20CLINIC%20%26%20IMPLANT%20CENTER!5e0!3m2!1sen!2sin!4v1779384084310!5m2!1sen!2sin",
     placeId: "ChIJM3cvgg5n4DsRhXEWwBQgWWQ"
+  },
+  "sudant": {
+    id: "sudant",
+    name: "Sudant Dental Clinic",
+    doctorName: "Chief Dental Surgeon",
+    address: "Maruti Sumiran, Anand–Vidyanagar Rd, opp. Nand Bhumi, Anand, Gujarat – 388001",
+    phone: "+91 94096 96751",
+    phoneRaw: "919409696751",
+    hours: "Mon–Fri: 9:30 AM–12:30 PM, 4–7 PM | Sat: 9 AM–1 PM, 2–5 PM",
+    rating: "4.9",
+    reviewsCount: "60",
+    website: "https://www.sudantdental.com",
+    mapEmbedUrl: "https://maps.google.com/maps?q=Sudant+Dental+Clinic,+Anand-Vidyanagar+Rd,+Anand,+Gujarat+388001&t=&z=15&ie=UTF8&iwloc=&output=embed",
+    placeId: "Sudant Dental Clinic, Anand, Gujarat"
   }
 };
