@@ -32,7 +32,6 @@ const menuFooter = [
 ];
 
 const MenuItem = ({ item, isActive, onClick }) => {
-  const { clinic } = useClinic();
   const Icon = item.icon;
   const content = (
     <li
@@ -61,7 +60,7 @@ const MenuItem = ({ item, isActive, onClick }) => {
 };
 
 export default function Sidebar({ onClose }) {
-  const { clinic, clinics, activeClinicId, setClinicId } = useClinic();
+  const { clinic, activeClinicId, setClinicId } = useClinic();
   const location = useLocation();
 
   return (

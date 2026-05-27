@@ -11,7 +11,6 @@ import { useCaptureInvoice } from '../../lib/useCaptureInvoice';
 import { useClinic } from '../../context/ClinicContext';
 
 const buildUpiUrl = ({ vpa, name, amount, note }) => {
-  const { clinic } = useClinic();
   const params = new URLSearchParams({
     pa: vpa,
     pn: name,
@@ -67,7 +66,6 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
     : '';
 
   const handleSelectMethod = (m) => {
-  const { clinic } = useClinic();
     if (m === 'upi' && !doctor?.upiId) {
       toast.error(`No UPI ID on file for ${doctor?.name || 'this doctor'}. Add one in the Doctors page.`);
       return;
@@ -77,7 +75,6 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
   };
 
   const handleConfirmPayment = () => {
-  const { clinic } = useClinic();
     if (amount <= 0 || amount > balance) {
       toast.error(`Enter a valid amount up to ₹${balance.toLocaleString()}`);
       return;
@@ -144,12 +141,10 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
   };
 
   const copyUpiId = () => {
-  const { clinic } = useClinic();
     navigator.clipboard?.writeText(doctor?.upiId || '').then(() => toast.success('UPI ID copied'));
   };
 
   const copyUpiLink = () => {
-  const { clinic } = useClinic();
     navigator.clipboard?.writeText(upiUrl).then(() => toast.success('UPI link copied'));
   };
 

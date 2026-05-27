@@ -57,7 +57,6 @@ export default function WhatsAppMessageDialog({ patient, isOpen, onClose, defaul
   };
 
   const handleKeyDown = (e) => {
-  const { clinic } = useClinic();
     // Ctrl+Enter or Cmd+Enter to send
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();

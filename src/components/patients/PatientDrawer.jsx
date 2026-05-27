@@ -26,12 +26,10 @@ export default function PatientDrawer({ patient, isOpen, onClose, onEdit, onDele
   if (!patient) return null;
 
   const goBook = () => {
-  const { clinic } = useClinic();
     onClose();
     navigate('/appointments', { state: { bookForPatientId: patient.id } });
   };
   const goInvoice = () => {
-  const { clinic } = useClinic();
     onClose();
     navigate('/billing', { state: { invoiceForPatientId: patient.id } });
   };

@@ -14,7 +14,6 @@ const faqs = [
 ];
 
 export default function Help() {
-  const { clinic } = useClinic();
   const [openIdx, setOpenIdx] = useState(null);
 
   return (

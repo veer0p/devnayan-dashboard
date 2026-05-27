@@ -31,7 +31,6 @@ const more = [
 ];
 
 export default function MobileBottomNav() {
-  const { clinic } = useClinic();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const isActive = (path) => location.pathname === path;

@@ -29,7 +29,6 @@ const CLINIC = {
 };
 
 const buildUpiUrl = ({ vpa, name, amount, note }) => {
-  const { clinic } = useClinic();
   const params = new URLSearchParams({
     pa: vpa,
     pn: name,
@@ -104,7 +103,6 @@ export default function PublicPayment() {
   });
 
   const handleSimulatePayment = () => {
-  const { clinic } = useClinic();
     setIsProcessing(true);
     setTimeout(() => {
       // Record payment in state (localStorage)
@@ -123,7 +121,6 @@ export default function PublicPayment() {
   };
 
   const copyUpiId = () => {
-  const { clinic } = useClinic();
     navigator.clipboard?.writeText(upiId).then(() => toast.success('UPI ID copied to clipboard!'));
   };
 

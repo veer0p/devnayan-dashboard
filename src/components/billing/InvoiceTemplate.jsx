@@ -39,7 +39,6 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
   const dateStr = new Date(invoice.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const handlePrint = () => {
-  const { clinic } = useClinic();
     document.body.classList.add('printing-invoice');
     requestAnimationFrame(() => {
       window.print();

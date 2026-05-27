@@ -75,20 +75,17 @@ export default function Billing() {
   }, [invoices]);
 
   const openAdd = () => {
-  const { clinic } = useClinic();
     setEditingInvoice(null);
     setIsModalOpen(true);
   };
 
   const openEdit = (inv) => {
-  const { clinic } = useClinic();
     setEditingInvoice(inv);
     setIsModalOpen(true);
     setViewingInvoice(null);
   };
 
   const handleSubmit = (invoice, isEdit) => {
-  const { clinic } = useClinic();
     if (isEdit) {
       setInvoices(prev => prev.map(i => i.id === invoice.id ? invoice : i));
       return;
@@ -104,7 +101,6 @@ export default function Billing() {
   };
 
   const handleDelete = () => {
-  const { clinic } = useClinic();
     if (!deletingInvoice) return;
     setInvoices(prev => prev.filter(i => i.id !== deletingInvoice.id));
     toast.success(`${deletingInvoice.id} deleted`);
@@ -113,7 +109,6 @@ export default function Billing() {
   };
 
   const handlePayment = ({ amount }) => {
-  const { clinic } = useClinic();
     if (!payingInvoice) return;
     setInvoices(prev => prev.map(inv => {
       if (inv.id !== payingInvoice.id) return inv;

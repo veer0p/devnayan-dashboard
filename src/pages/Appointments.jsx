@@ -59,7 +59,6 @@ const statusTone = {
 
 // --- Hover tooltip (rich, portaled, no browser title) ----------------------
 const HoverPopover = ({ event, doctor, palette, anchorRect }) => {
-  const { clinic } = useClinic();
   if (!anchorRect) return null;
 
   const startStr = format(event.start, 'h:mm a');
@@ -157,7 +156,6 @@ const HoverPopover = ({ event, doctor, palette, anchorRect }) => {
 
 // --- Event block (flat, clean, no chip, time on hover only) ----------------
 const EventChip = ({ event, doctors, view }) => {
-  const { clinic } = useClinic();
   const doctor = doctors.find(d => d.id === event.doctorId);
   const palette = paletteFromDoctor(doctor);
   const durationMins = Math.max(0, (event.end - event.start) / 60000);
@@ -265,7 +263,6 @@ const computeLabel = (view, date) => {
 
 // --- Toolbar (parent-driven; lives outside the Calendar) -------------------
 const PageToolbar = ({ view, label, onNavigate, onViewChange, hideNav }) => {
-  const { clinic } = useClinic();
   const views = [
     { id: 'day',    label: 'Day' },
     { id: 'week',   label: 'Week' },
@@ -336,7 +333,6 @@ const PageToolbar = ({ view, label, onNavigate, onViewChange, hideNav }) => {
 
 // --- Desktop List view (proper table — matches Patients/Billing styling) ---
 const AppointmentsTable = ({ appointments, doctors, onSelect, onRemind }) => {
-  const { clinic } = useClinic();
   const sorted = useMemo(
     () => [...appointments].sort((a, b) => new Date(a.start) - new Date(b.start)),
     [appointments]
@@ -448,7 +444,6 @@ const getDayLabel = (date) => {
 };
 
 const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
-  const { clinic } = useClinic();
   const grouped = appointments.reduce((acc, app) => {
     const dateKey = format(new Date(app.start), 'yyyy-MM-dd');
     if (!acc[dateKey]) acc[dateKey] = [];

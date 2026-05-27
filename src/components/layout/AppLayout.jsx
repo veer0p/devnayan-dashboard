@@ -15,7 +15,6 @@ export default function AppLayout({ children }) {
 
   useEffect(() => {
     const handler = (e) => {
-  const { clinic } = useClinic();
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setMobileSearchOpen(true);
