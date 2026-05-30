@@ -171,4 +171,21 @@ export const mockPatientsList = [
       { id: 'h-vk-11', date: '2026-04-16', treatment: 'Braces - Monthly Adjustment', doctor: 'Dr. Darshit Dhanani', cost: 2500, status: 'Paid', notes: 'Adjustment routine. Looking great.' },
     ]
   },
+  {
+    id: '7',
+    name: 'Janki Matroja',
+    doctorId: 'd1',
+    age: 26,
+    gender: 'Female',
+    phone: '8780149165',
+    address: 'Bardoli, Gujarat',
+    registrationDate: '2026-05-30',
+    lastVisit: '2026-05-30',
+    totalVisits: 1,
+    balance: 0,
+    status: 'Active',
+    medicalAlerts: [],
+    teethConditions: {},
+    history: []
+  }
 ];

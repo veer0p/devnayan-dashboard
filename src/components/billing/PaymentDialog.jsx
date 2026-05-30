@@ -107,7 +107,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
         : `Status       : Paid in Full`,
       ``,
       remaining > 0
-        ? `Please clear the remaining balance at your next visit or contact us at +91 84870 05334.`
+        ? `Please clear the remaining balance at your next visit or contact us at ${clinic.phone}.`
         : `Your account is fully settled. Thank you.`,
       ``,
       `Regards,`,
@@ -398,7 +398,7 @@ export default function PaymentDialog({ invoice, isOpen, onClose, onPayment }) {
               <div>
                 <div style={{ fontWeight: 700, fontSize: 17 }}>{clinic.name}</div>
                 <div style={{ fontSize: 10, opacity: 0.85, marginTop: 2 }}>Advance Dental Care Hospital</div>
-                <div style={{ fontSize: 9, opacity: 0.7, marginTop: 6 }}>Lal Bahadur Shastri Rd, Bardoli, Gujarat</div>
+                <div style={{ fontSize: 9, opacity: 0.7, marginTop: 6 }}>{clinic.address}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.75 }}>Receipt ID</div>

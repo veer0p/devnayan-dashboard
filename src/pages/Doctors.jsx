@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import AppLayout from '../components/layout/AppLayout';
 import Select from '../components/ui/Select';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import DoctorModal from '../components/doctors/DoctorModal';
 import DoctorDrawer from '../components/doctors/DoctorDrawer';
 import { useLocalStorage } from '../lib/useLocalStorage';
 import { mockDoctors, doctorSpecialties } from '../data/doctors';
@@ -35,9 +34,9 @@ export default function Doctors() {
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('All');
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDoctor, setEditingDoctor] = useState(null);
   const [viewingDoctor, setViewingDoctor] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [initialEditMode, setInitialEditMode] = useState(false);
   const [deletingDoctor, setDeletingDoctor] = useState(null);
 
   const filtered = doctors.filter(d => {
@@ -60,14 +59,21 @@ export default function Doctors() {
   }, [doctors, patients, invoices]);
 
   const openAdd = () => {
-    setEditingDoctor(null);
-    setIsModalOpen(true);
+    setViewingDoctor(null);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
   };
 
   const openEdit = (doctor) => {
-    setEditingDoctor(doctor);
-    setIsModalOpen(true);
-    setViewingDoctor(null);
+    setViewingDoctor(doctor);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
+  };
+
+  const openView = (doctor) => {
+    setViewingDoctor(doctor);
+    setInitialEditMode(false);
+    setIsDrawerOpen(true);
   };
 
   const handleSubmit = (doctor, isEdit) => {
@@ -150,7 +156,7 @@ export default function Doctors() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.04 }}
-              onClick={() => setViewingDoctor(doctor)}
+              onClick={() => openView(doctor)}
               className="bg-bg-card border border-border-color rounded-xl p-5 cursor-pointer hover:border-text-muted/30 transition-colors group"
             >
               <div className="flex items-start justify-between mb-4">
@@ -254,18 +260,20 @@ export default function Doctors() {
         )}
       </div>
 
-      <DoctorModal
-        isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setEditingDoctor(null); }}
-        onSubmit={handleSubmit}
-        initialDoctor={editingDoctor}
-      />
-
       <DoctorDrawer
         doctor={viewingDoctor}
-        isOpen={!!viewingDoctor}
-        onClose={() => setViewingDoctor(null)}
-        onEdit={() => openEdit(viewingDoctor)}
+        isOpen={isDrawerOpen}
+        onClose={() => { setIsDrawerOpen(false); setViewingDoctor(null); }}
+        initialEditMode={initialEditMode}
+        onUpdate={(updated, isEdit) => {
+          handleSubmit(updated, isEdit);
+          if (isEdit) {
+            setViewingDoctor(updated);
+          } else {
+            setViewingDoctor(null);
+            setIsDrawerOpen(false);
+          }
+        }}
         onDelete={() => setDeletingDoctor(viewingDoctor)}
         patientCount={viewingDoctor ? (countsByDoctor[viewingDoctor.id]?.patients || 0) : 0}
         invoiceCount={viewingDoctor ? (countsByDoctor[viewingDoctor.id]?.invoices || 0) : 0}

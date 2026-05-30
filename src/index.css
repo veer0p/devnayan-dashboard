@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', sans-serif;
 
@@ -30,16 +32,16 @@
 
 /* Light theme token overrides — toggled via <html data-theme="light"> */
 [data-theme="light"] {
-  --color-bg-body: #f4f5f8;
-  --color-bg-card: #ffffff;
+  --color-bg-body: #e4e7ec;
+  --color-bg-card: #f8fafc;
 
-  --color-text-main: #0f172a;
+  --color-text-main: #1e293b;
   --color-text-muted: #64748b;
-  --color-border-color: #e4e7ec;
-  --color-border-strong: #cbd2da;
+  --color-border-color: #d2d6dc;
+  --color-border-strong: #b5bbc4;
 
-  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 8px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
 }
 
 @layer base {

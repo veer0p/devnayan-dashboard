@@ -12,7 +12,8 @@ import {
   SignOut,
   Tooth,
   X,
-  EnvelopeSimple
+  EnvelopeSimple,
+  ChartBar
 } from '@phosphor-icons/react';
 import clsx from 'clsx';
 import { useClinic } from '../../context/ClinicContext';
@@ -25,6 +26,7 @@ const menuMain = [
   { label: 'Billing', icon: ShoppingCart, path: '/billing' },
   { label: 'Inventory', icon: Package, path: '/inventory' },
   { label: 'Doctors', icon: Stethoscope, path: '/doctors' },
+  { label: 'Reports', icon: ChartBar, path: '/reports' },
 ];
 
 const menuFooter = [
@@ -70,7 +72,9 @@ export default function Sidebar({ onClose }) {
           <div className="bg-primary text-white w-8 h-8 flex items-center justify-center rounded-lg shadow-sm">
             <Tooth size={18} weight="bold" />
           </div>
-          <span className="text-text-main">{clinic.name.split(" ")[0]}</span>
+          <span className="text-text-main">
+            {clinic.id === 'janki' ? 'Janki Clinic' : (clinic.id === 'devnayan' ? 'Devnayan Clinic' : clinic.name.split(" ")[0] + ' Clinic')}
+          </span>
         </div>
         {onClose ? (
           <button onClick={onClose} className="text-text-muted hover:text-text-main transition-colors">

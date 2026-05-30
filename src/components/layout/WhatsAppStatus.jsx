@@ -229,25 +229,25 @@ export default function WhatsAppStatus() {
 
   // Determine button status color & text
   let statusColor = 'text-text-muted hover:text-text-main';
-  let badgeColor = 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+  let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200/50 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-500/20';
   let statusText = 'Disabled';
 
   if (enabled) {
     if (status === 'READY') {
       statusColor = 'text-emerald-500 hover:text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]';
-      badgeColor = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+      badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200/50 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30';
       statusText = 'Connected';
     } else if (status === 'QR_READY') {
       statusColor = 'text-amber-500 hover:text-amber-400 animate-pulse';
-      badgeColor = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+      badgeColor = 'bg-amber-50 text-amber-800 border-amber-200/50 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30';
       statusText = 'Scan QR';
     } else if (status === 'INITIALIZING' || status === 'AUTHENTICATING' || status === 'CREATED' || status === 'NO_SESSION') {
       statusColor = 'text-orange-500 hover:text-orange-400 animate-pulse';
-      badgeColor = 'bg-orange-500/15 text-orange-400 border-orange-500/30';
+      badgeColor = 'bg-orange-50 text-orange-800 border-orange-200/50 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30';
       statusText = 'Connecting';
     } else if (status === 'SERVER_UNREACHABLE') {
       statusColor = 'text-rose-500 hover:text-rose-400';
-      badgeColor = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+      badgeColor = 'bg-rose-50 text-rose-700 border-rose-200/50 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30';
       statusText = 'Server Error';
     } else {
       statusColor = 'text-gray-400 hover:text-text-main';

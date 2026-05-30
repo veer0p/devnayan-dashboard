@@ -6,7 +6,6 @@ import AppLayout from '../components/layout/AppLayout';
 import Select from '../components/ui/Select';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import StatusBadge from '../components/ui/StatusBadge';
-import InventoryModal from '../components/inventory/InventoryModal';
 import InventoryDrawer from '../components/inventory/InventoryDrawer';
 import { mockInventory, inventoryCategories } from '../data/inventory';
 import { useLocalStorage } from '../lib/useLocalStorage';
@@ -16,8 +15,8 @@ export default function Inventory() {
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('All');
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [initialEditMode, setInitialEditMode] = useState(false);
   const [viewingItem, setViewingItem] = useState(null);
   const [deletingItem, setDeletingItem] = useState(null);
 
@@ -36,14 +35,21 @@ export default function Inventory() {
   const totalValue = items.reduce((s, i) => s + i.stock * i.price, 0);
 
   const openAdd = () => {
-    setEditingItem(null);
-    setIsModalOpen(true);
+    setViewingItem(null);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
   };
 
   const openEdit = (item) => {
-    setEditingItem(item);
-    setIsModalOpen(true);
-    setViewingItem(null);
+    setViewingItem(item);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
+  };
+
+  const openView = (item) => {
+    setViewingItem(item);
+    setInitialEditMode(false);
+    setIsDrawerOpen(true);
   };
 
   const handleSubmit = (item, isEdit) => {
@@ -143,7 +149,7 @@ export default function Inventory() {
                 return (
                   <tr
                     key={item.id}
-                    onClick={() => setViewingItem(item)}
+                    onClick={() => openView(item)}
                     className="border-b border-border-color last:border-0 hover:bg-white/[0.03] transition-colors cursor-pointer"
                   >
                     <td className="py-3 pl-4">
@@ -199,7 +205,7 @@ export default function Inventory() {
             return (
               <div
                 key={item.id}
-                onClick={() => setViewingItem(item)}
+                onClick={() => openView(item)}
                 className="bg-bg-body border border-border-color rounded-xl p-4 active:bg-border-color/30 transition-all cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
@@ -225,18 +231,20 @@ export default function Inventory() {
         </div>
       </motion.div>
 
-      <InventoryModal
-        isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setEditingItem(null); }}
-        onSubmit={handleSubmit}
-        initialItem={editingItem}
-      />
-
       <InventoryDrawer
         item={viewingItem}
-        isOpen={!!viewingItem}
-        onClose={() => setViewingItem(null)}
-        onEdit={() => openEdit(viewingItem)}
+        isOpen={isDrawerOpen}
+        onClose={() => { setIsDrawerOpen(false); setViewingItem(null); }}
+        initialEditMode={initialEditMode}
+        onUpdate={(updated, isEdit) => {
+          handleSubmit(updated, isEdit);
+          if (isEdit) {
+            setViewingItem(updated);
+          } else {
+            setViewingItem(null);
+            setIsDrawerOpen(false);
+          }
+        }}
         onDelete={() => setDeletingItem(viewingItem)}
       />
 

@@ -12,6 +12,7 @@ import {
   ChatTeardrop,
   X,
   EnvelopeSimple,
+  ChartBar
 } from '@phosphor-icons/react';
 import clsx from 'clsx';
 import { useClinic } from '../../context/ClinicContext';
@@ -25,6 +26,7 @@ const primary = [
 
 const more = [
   { label: 'Inquiries', icon: EnvelopeSimple, path: '/inquiries' },
+  { label: 'Reports', icon: ChartBar, path: '/reports' },
   { label: 'Inventory', icon: Package, path: '/inventory' },
   { label: 'Doctors', icon: Stethoscope, path: '/doctors' },
   { label: 'Help', icon: ChatTeardrop, path: '/help' },

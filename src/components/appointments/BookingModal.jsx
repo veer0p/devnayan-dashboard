@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CalendarPlus, PencilSimple, Check } from '@phosphor-icons/react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { CalendarPlus, PencilSimple, Check, X } from '@phosphor-icons/react';
 import { toast } from 'sonner';
-import Modal from '../ui/Modal';
 import Select from '../ui/Select';
 import { mockTreatments } from '../../data/appointments';
 import { mockPatientsList } from '../../data/patients';
@@ -118,113 +118,135 @@ export default function BookingModal({ isOpen, onClose, onSubmit, initialAppoint
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={isEdit ? 'Edit Appointment' : 'Book Appointment'}
-      icon={isEdit ? <PencilSimple size={24} className="text-primary" /> : <CalendarPlus size={24} className="text-primary" />}
-      maxWidth="max-w-lg"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-text-main">Patient</label>
-          <Select
-            value={form.patientId}
-            onChange={handlePatientChange}
-            options={patientOptions}
-            placeholder="Select a patient..."
-            size="lg"
-            buttonClassName="bg-bg-body"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-main">Doctor</label>
-            <Select
-              value={form.doctorId}
-              onChange={(v) => setForm({ ...form, doctorId: v })}
-              options={doctorOptions}
-              placeholder="Select doctor..."
-              size="lg"
-              buttonClassName="bg-bg-body"
-            />
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm animate-in fade-in duration-200" />
+        <Dialog.Content
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+          }}
+          className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-bg-card shadow-2xl z-50 animate-in slide-in-from-right duration-300 focus:outline-none flex flex-col border-l border-border-color"
+        >
+          <div className="p-6 pb-4 flex justify-between items-start border-b border-border-color mb-6">
+            <div className="min-w-0 flex-1 pr-4">
+              <Dialog.Title className="text-xl font-semibold flex items-center gap-2 text-text-main">
+                {isEdit ? <PencilSimple size={20} className="text-primary" /> : <CalendarPlus size={20} className="text-primary" />}
+                {isEdit ? 'Edit Appointment' : 'Book Appointment'}
+              </Dialog.Title>
+            </div>
+            <Dialog.Close asChild>
+              <button className="text-text-muted hover:bg-bg-body p-1.5 rounded-lg transition-colors focus:outline-none">
+                <X size={20} />
+              </button>
+            </Dialog.Close>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-main">Treatment</label>
-            <Select
-              value={form.treatmentId}
-              onChange={(v) => setForm({ ...form, treatmentId: v })}
-              options={treatmentOptions}
-              placeholder="Select treatment..."
-              size="lg"
-              buttonClassName="bg-bg-body"
-            />
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-main">Date</label>
-            <input
-              type="date"
-              required
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className="w-full h-11 px-3 rounded-xl border border-border-color bg-bg-body outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-main">Time</label>
-            <input
-              type="time"
-              required
-              value={form.time}
-              onChange={(e) => setForm({ ...form, time: e.target.value })}
-              className="w-full h-11 px-3 rounded-xl border border-border-color bg-bg-body outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-            />
-          </div>
-        </div>
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto space-y-6 px-6 pb-4 custom-scrollbar text-xs">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-main">Patient</label>
+                  <Select
+                    value={form.patientId}
+                    onChange={handlePatientChange}
+                    options={patientOptions}
+                    placeholder="Select a patient..."
+                    size="lg"
+                    buttonClassName="bg-bg-body"
+                  />
+                </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-text-main">Chair</label>
-          <Select
-            value={form.chair}
-            onChange={(v) => setForm({ ...form, chair: v })}
-            options={chairOptions}
-            size="lg"
-            buttonClassName="bg-bg-body"
-          />
-        </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-text-main">Doctor</label>
+                    <Select
+                      value={form.doctorId}
+                      onChange={(v) => setForm({ ...form, doctorId: v })}
+                      options={doctorOptions}
+                      placeholder="Select doctor..."
+                      size="lg"
+                      buttonClassName="bg-bg-body"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-text-main">Treatment</label>
+                    <Select
+                      value={form.treatmentId}
+                      onChange={(v) => setForm({ ...form, treatmentId: v })}
+                      options={treatmentOptions}
+                      placeholder="Select treatment..."
+                      size="lg"
+                      buttonClassName="bg-bg-body"
+                    />
+                  </div>
+                </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-text-main">Notes</label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="w-full p-3 rounded-xl border border-border-color bg-bg-body outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm resize-none"
-            rows="3"
-            placeholder="Optional notes for this visit..."
-          />
-        </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-text-main">Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.date}
+                      onChange={(e) => setForm({ ...form, date: e.target.value })}
+                      className="w-full h-11 px-3 rounded-xl border border-border-color bg-bg-body outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm animate-none"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-text-main">Time</label>
+                    <input
+                      type="time"
+                      required
+                      value={form.time}
+                      onChange={(e) => setForm({ ...form, time: e.target.value })}
+                      className="w-full h-11 px-3 rounded-xl border border-border-color bg-bg-body outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm animate-none"
+                    />
+                  </div>
+                </div>
 
-        <div className="pt-4 flex justify-end gap-3 border-t border-border-color">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl text-sm font-medium text-text-muted hover:bg-bg-body transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm flex items-center gap-2"
-          >
-            <Check size={16} weight="bold" />
-            {isEdit ? 'Save Changes' : 'Confirm Booking'}
-          </button>
-        </div>
-      </form>
-    </Modal>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-main">Chair</label>
+                  <Select
+                    value={form.chair}
+                    onChange={(v) => setForm({ ...form, chair: v })}
+                    options={chairOptions}
+                    size="lg"
+                    buttonClassName="bg-bg-body"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-main">Notes</label>
+                  <textarea
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    className="w-full p-3 rounded-xl border border-border-color bg-bg-body outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm resize-none"
+                    rows="3"
+                    placeholder="Optional notes for this visit..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 pt-4 border-t border-border-color flex justify-end gap-3 bg-bg-card">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:bg-bg-body transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm flex items-center gap-2"
+              >
+                <Check size={16} weight="bold" />
+                {isEdit ? 'Save Changes' : 'Confirm Booking'}
+              </button>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

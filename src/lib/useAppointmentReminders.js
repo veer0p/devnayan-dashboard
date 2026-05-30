@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'dentease.notifiedAppointments';
+const getStoragePrefix = () => {
+  if (typeof window === 'undefined') return 'dentease.devnayan.';
+  const params = new URLSearchParams(window.location.search);
+  const clinic = params.get('clinic') || 'devnayan';
+  return `dentease.${clinic}.`;
+};
+
+const getStorageKey = () => getStoragePrefix() + 'notifiedAppointments';
 
 const sameDay = (a, b) => {
   const da = a instanceof Date ? a : new Date(a);
@@ -10,7 +17,7 @@ const sameDay = (a, b) => {
 
 const loadNotified = () => {
   try {
-    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+    return new Set(JSON.parse(localStorage.getItem(getStorageKey()) || '[]'));
   } catch {
     return new Set();
   }
@@ -18,7 +25,7 @@ const loadNotified = () => {
 
 const saveNotified = (set) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set)));
+    localStorage.setItem(getStorageKey(), JSON.stringify(Array.from(set)));
   } catch {
     /* ignore */
   }

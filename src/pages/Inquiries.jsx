@@ -31,6 +31,10 @@ const statusOptions = [
 
 export default function Inquiries() {
   const { clinic } = useClinic();
+  const params = new URLSearchParams(window.location.search);
+  const clinicId = params.get('clinic') || 'devnayan';
+  const inquiriesStorageKey = `dentease.${clinicId}.local_inquiries`;
+
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -44,6 +48,7 @@ export default function Inquiries() {
   const [deletingInquiry, setDeletingInquiry] = useState(null);
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [editingInquiry, setEditingInquiry] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // WhatsApp compose state
   const [whatsAppInquiry, setWhatsAppInquiry] = useState(null);
@@ -78,7 +83,7 @@ export default function Inquiries() {
     } catch (e) {
       console.warn('Inquiries API not accessible. Loading from LocalStorage (Demo Mode).', e);
       setIsDemoMode(true);
-      const localInquiriesRaw = localStorage.getItem('dentease.local_inquiries') || '[]';
+      const localInquiriesRaw = localStorage.getItem(inquiriesStorageKey) || '[]';
       setInquiries(JSON.parse(localInquiriesRaw));
     } finally {
       setLoading(false);
@@ -121,7 +126,7 @@ export default function Inquiries() {
       const updated = inquiries.filter((i) => i.id !== deletingInquiry.id);
       setInquiries(updated);
       if (isDemoMode) {
-        localStorage.setItem('dentease.local_inquiries', JSON.stringify(updated));
+        localStorage.setItem(inquiriesStorageKey, JSON.stringify(updated));
       }
       toast.success('Inquiry successfully deleted');
     } catch (err) {
@@ -152,7 +157,8 @@ export default function Inquiries() {
     setFormStatus(inq.status || 'pending');
     setFormMessage(inq.message || '');
     setFormNotes(inq.notes || '');
-    setIsAddEditModalOpen(true);
+    setSelectedInquiry(inq);
+    setIsEditing(true);
   };
 
   // Submit manual creation / update
@@ -187,16 +193,20 @@ export default function Inquiries() {
           if (!response.ok) throw new Error('API edit error');
           const updatedData = await response.json();
           setInquiries((prev) => prev.map((i) => (i.id === editingInquiry.id ? updatedData : i)));
+          setSelectedInquiry(updatedData);
         } else {
+          const updatedObj = { ...editingInquiry, ...payload, updatedAt: new Date().toISOString() };
           const updated = inquiries.map((i) =>
             i.id === editingInquiry.id
-              ? { ...i, ...payload, updatedAt: new Date().toISOString() }
+              ? updatedObj
               : i
           );
           setInquiries(updated);
-          localStorage.setItem('dentease.local_inquiries', JSON.stringify(updated));
+          localStorage.setItem(inquiriesStorageKey, JSON.stringify(updated));
+          setSelectedInquiry(updatedObj);
         }
         toast.success('Inquiry updated successfully');
+        setIsEditing(false);
       } else {
         // Create
         if (!isDemoMode) {
@@ -220,7 +230,7 @@ export default function Inquiries() {
           };
           const updated = [newInq, ...inquiries];
           setInquiries(updated);
-          localStorage.setItem('dentease.local_inquiries', JSON.stringify(updated));
+          localStorage.setItem(inquiriesStorageKey, JSON.stringify(updated));
         }
         toast.success('Inquiry created successfully');
       }
@@ -281,7 +291,7 @@ export default function Inquiries() {
       const updated = inquiries.map((i) => (i.id === id ? { ...i, status: newStatus } : i));
       setInquiries(updated);
       if (isDemoMode) {
-        localStorage.setItem('dentease.local_inquiries', JSON.stringify(updated));
+        localStorage.setItem(inquiriesStorageKey, JSON.stringify(updated));
       }
       // If selectedInquiry is currently open in drawer, update it
       if (selectedInquiry && selectedInquiry.id === id) {
@@ -304,7 +314,7 @@ export default function Inquiries() {
           <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2">
             Inquiries
             {isDemoMode && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold uppercase tracking-wider">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/50 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20 font-bold uppercase tracking-wider">
                 Demo Fallback
               </span>
             )}
@@ -378,7 +388,6 @@ export default function Inquiries() {
                   <th className="p-4">Date</th>
                   <th className="p-4">Patient</th>
                   <th className="p-4">Phone</th>
-                  <th className="p-4">Template</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
@@ -405,17 +414,13 @@ export default function Inquiries() {
                       </td>
                       <td className="p-4 font-light">{inq.phone}</td>
                       <td className="p-4">
-                        <span className="px-2 py-0.5 rounded bg-muted-bg text-text-muted text-[10px] font-bold font-mono">
-                        </span>
-                      </td>
-                      <td className="p-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                             inq.status === 'pending'
-                              ? 'bg-amber-500/10 text-amber-500'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200/50 dark:bg-amber-500/10 dark:text-amber-400 dark:border-transparent'
                               : inq.status === 'contacted'
-                              ? 'bg-blue-500/10 text-blue-500'
-                              : 'bg-emerald-500/10 text-emerald-500'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200/50 dark:bg-blue-500/10 dark:text-blue-400 dark:border-transparent'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-transparent'
                           }`}
                         >
                           {inq.status}
@@ -470,7 +475,7 @@ export default function Inquiries() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedInquiry(null)}
+              onClick={() => { setSelectedInquiry(null); setIsEditing(false); }}
               className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
             />
             <motion.div
@@ -482,112 +487,217 @@ export default function Inquiries() {
             >
               <div className="flex items-center justify-between border-b border-border-color pb-4 mb-6">
                 <div>
-                  <h3 className="text-base font-bold text-text-main">Inquiry Details</h3>
+                  <h3 className="text-base font-bold text-text-main">
+                    {isEditing ? 'Edit Inquiry' : 'Inquiry Details'}
+                  </h3>
                   <span className="text-[10px] text-text-muted">
                     ID: {selectedInquiry.id}
                   </span>
                 </div>
                 <button
-                  onClick={() => setSelectedInquiry(null)}
+                  onClick={() => { setSelectedInquiry(null); setIsEditing(false); }}
                   className="p-1.5 hover:bg-bg-body rounded-full text-text-muted hover:text-text-main"
                 >
                   <X size={18} weight="bold" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar">
-                {/* Profile Card */}
-                <div className="p-4 rounded-xl bg-bg-body border border-border-color flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center text-lg">
-                    {selectedInquiry.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-text-main text-sm">{selectedInquiry.name}</h4>
-                    <p className="text-xs text-text-muted">{selectedInquiry.phone}</p>
-                  </div>
-                </div>
-
-                {/* Details list */}
-                <div className="space-y-4 text-xs">
-                  <div className="grid grid-cols-3 gap-2">
-                    <span className="text-text-muted font-medium">Submitted At</span>
-                    <span className="col-span-2 text-text-main font-light">
-                      {new Date(selectedInquiry.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <span className="text-text-muted font-medium">Email Address</span>
-                    <span className="col-span-2 text-text-main font-light break-all">
-                      {selectedInquiry.email || 'None Provided'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <span className="col-span-2">
-                      <span className="px-1.5 py-0.5 rounded bg-muted-bg text-text-muted font-mono font-bold uppercase text-[9px]">
-                        {selectedInquiry.templateId || 'General'}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <span className="text-text-muted font-medium">Status</span>
-                    <span className="col-span-2">
-                      <div className="flex gap-1.5">
-                        {['pending', 'contacted', 'closed'].map((st) => (
-                          <button
-                            key={st}
-                            onClick={() => handleUpdateStatus(selectedInquiry.id, st)}
-                            className={`px-2 py-0.5 text-[9px] font-bold uppercase rounded-full border transition-all ${
-                              selectedInquiry.status === st
-                                ? 'bg-primary/20 border-primary text-primary'
-                                : 'bg-transparent border-border-color text-text-muted hover:bg-bg-body'
-                            }`}
-                          >
-                            {st}
-                          </button>
-                        ))}
+              {isEditing ? (
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                  <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar text-xs">
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="font-semibold text-text-muted">Full Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formName}
+                          onChange={(e) => setFormName(e.target.value)}
+                          placeholder="Aarav Patel"
+                          className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary text-text-main"
+                        />
                       </div>
-                    </span>
-                  </div>
-                </div>
+                      
+                      <div className="space-y-1">
+                        <label className="font-semibold text-text-muted">Phone Number *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formPhone}
+                          onChange={(e) => setFormPhone(e.target.value)}
+                          placeholder="9537293756"
+                          className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary text-text-main"
+                        />
+                      </div>
 
-                {/* Patient Inquiry Message */}
-                <div className="space-y-2">
-                  <span className="text-xs text-text-muted font-semibold flex items-center gap-1.5">
-                    <EnvelopeSimple size={16} />
-                    Message Submitted:
-                  </span>
-                  <div className="p-4 rounded-xl border border-border-color bg-bg-body text-xs text-text-main leading-relaxed italic font-light">
-                    {selectedInquiry.message || 'No text message entered.'}
-                  </div>
-                </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-text-muted">Email Address</label>
+                        <input
+                          type="email"
+                          value={formEmail}
+                          onChange={(e) => setFormEmail(e.target.value)}
+                          placeholder="name@example.com"
+                          className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary text-text-main"
+                        />
+                      </div>
 
-                {/* Admin Internal Notes */}
-                <div className="space-y-2">
-                  <span className="text-xs text-text-muted font-semibold flex items-center gap-1.5">
-                    <Note size={16} />
-                    Internal Admin Notes:
-                  </span>
-                  <div className="p-4 rounded-xl border border-border-color bg-amber-500/[0.02] text-xs text-text-main leading-relaxed font-light">
-                    {selectedInquiry.notes || 'No administrative notes saved. Click Edit to add notes.'}
-                  </div>
-                </div>
-              </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-text-muted">Status</label>
+                        <div className="flex gap-2">
+                          {['pending', 'contacted', 'closed'].map((st) => (
+                            <button
+                              key={st}
+                              type="button"
+                              onClick={() => setFormStatus(st)}
+                              className={`px-3 py-1.5 uppercase font-bold rounded-lg border transition-all ${
+                                formStatus === st
+                                  ? 'bg-primary/20 border-primary text-primary'
+                                  : 'bg-bg-body border-border-color text-text-muted hover:bg-bg-body/70'
+                              }`}
+                            >
+                              {st}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-              <div className="border-t border-border-color pt-4 mt-6 flex gap-3">
-                <button
-                  onClick={() => setWhatsAppInquiry(selectedInquiry)}
-                  className="flex-1 h-10 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <WhatsappLogo size={16} weight="fill" />
-                  <span>WhatsApp Patient</span>
-                </button>
-                <button
-                  onClick={() => openEdit(selectedInquiry)}
-                  className="px-4 h-10 rounded-xl border border-border-color hover:bg-bg-body text-text-main font-medium text-xs"
-                >
-                  Edit
-                </button>
-              </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-text-muted">Inquiry Message</label>
+                        <textarea
+                          value={formMessage}
+                          onChange={(e) => setFormMessage(e.target.value)}
+                          rows={3}
+                          placeholder="Message submitted by user..."
+                          className="w-full p-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary resize-none text-text-main"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-semibold text-text-muted">Internal Admin Notes</label>
+                        <textarea
+                          value={formNotes}
+                          onChange={(e) => setFormNotes(e.target.value)}
+                          rows={3}
+                          placeholder="E.g. Called and scheduled for root canal on next Monday..."
+                          className="w-full p-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary resize-none text-text-main"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border-color pt-4 mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 h-10 rounded-xl border border-border-color text-text-main font-medium text-xs hover:bg-bg-body"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 h-10 bg-primary text-white rounded-xl font-medium text-xs hover:bg-primary-hover shadow-sm font-semibold"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar">
+                    {/* Profile Card */}
+                    <div className="p-4 rounded-xl bg-bg-body border border-border-color flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center text-lg">
+                        {selectedInquiry.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-text-main text-sm">{selectedInquiry.name}</h4>
+                        <p className="text-xs text-text-muted">{selectedInquiry.phone}</p>
+                      </div>
+                    </div>
+
+                    {/* Details list */}
+                    <div className="space-y-4 text-xs">
+                      <div className="grid grid-cols-3 gap-2">
+                        <span className="text-text-muted font-medium">Submitted At</span>
+                        <span className="col-span-2 text-text-main font-light">
+                          {new Date(selectedInquiry.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <span className="text-text-muted font-medium">Email Address</span>
+                        <span className="col-span-2 text-text-main font-light break-all">
+                          {selectedInquiry.email || 'None Provided'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <span className="col-span-2">
+                          <span className="px-1.5 py-0.5 rounded bg-muted-bg text-text-muted font-mono font-bold uppercase text-[9px]">
+                            {selectedInquiry.templateId || 'General'}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <span className="text-text-muted font-medium">Status</span>
+                        <span className="col-span-2">
+                          <div className="flex gap-1.5">
+                            {['pending', 'contacted', 'closed'].map((st) => (
+                              <button
+                                key={st}
+                                onClick={() => handleUpdateStatus(selectedInquiry.id, st)}
+                                className={`px-2 py-0.5 text-[9px] font-bold uppercase rounded-full border transition-all ${
+                                  selectedInquiry.status === st
+                                    ? 'bg-primary/20 border-primary text-primary'
+                                    : 'bg-transparent border-border-color text-text-muted hover:bg-bg-body'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            ))}
+                          </div>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Patient Inquiry Message */}
+                    <div className="space-y-2">
+                      <span className="text-xs text-text-muted font-semibold flex items-center gap-1.5">
+                        <EnvelopeSimple size={16} />
+                        Message Submitted:
+                      </span>
+                      <div className="p-4 rounded-xl border border-border-color bg-bg-body text-xs text-text-main leading-relaxed italic font-light">
+                        {selectedInquiry.message || 'No text message entered.'}
+                      </div>
+                    </div>
+
+                    {/* Admin Internal Notes */}
+                    <div className="space-y-2">
+                      <span className="text-xs text-text-muted font-semibold flex items-center gap-1.5">
+                        <Note size={16} />
+                        Internal Admin Notes:
+                      </span>
+                      <div className="p-4 rounded-xl border border-border-color bg-amber-500/[0.02] text-xs text-text-main leading-relaxed font-light">
+                        {selectedInquiry.notes || 'No administrative notes saved. Click Edit to add notes.'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border-color pt-4 mt-6 flex gap-3">
+                    <button
+                      onClick={() => setWhatsAppInquiry(selectedInquiry)}
+                      className="flex-1 h-10 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <WhatsappLogo size={16} weight="fill" />
+                      <span>WhatsApp Patient</span>
+                    </button>
+                    <button
+                      onClick={() => openEdit(selectedInquiry)}
+                      className="px-4 h-10 rounded-xl border border-border-color hover:bg-bg-body text-text-main font-medium text-xs"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </>
         )}
@@ -605,115 +715,124 @@ export default function Inquiries() {
               className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-bg-card border border-border-color rounded-2xl p-6 shadow-2xl z-50"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+              className="fixed right-0 top-0 bottom-0 w-full sm:w-[460px] bg-bg-card border-l border-border-color z-50 p-6 shadow-2xl flex flex-col"
             >
-              <div className="flex items-center justify-between border-b border-border-color pb-4 mb-4">
-                <h3 className="text-base font-bold text-text-main">
-                  {editingInquiry ? 'Edit Inquiry' : 'Add New Inquiry'}
-                </h3>
+              <div className="flex items-center justify-between border-b border-border-color pb-4 mb-6">
+                <div>
+                  <h3 className="text-base font-bold text-text-main">
+                    {editingInquiry ? 'Edit Inquiry' : 'Add New Inquiry'}
+                  </h3>
+                  {editingInquiry && (
+                    <span className="text-[10px] text-text-muted">
+                      ID: {editingInquiry.id}
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={() => setIsAddEditModalOpen(false)}
-                  className="p-1 hover:bg-bg-body rounded-full text-text-muted hover:text-text-main"
+                  className="p-1.5 hover:bg-bg-body rounded-full text-text-muted hover:text-text-main"
                 >
-                  <X size={16} weight="bold" />
+                  <X size={18} weight="bold" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="font-semibold text-text-muted">Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      placeholder="Aarav Patel"
-                      className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary"
-                    />
+              <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar text-xs">
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="font-semibold text-text-muted">Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        placeholder="Aarav Patel"
+                        className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <label className="font-semibold text-text-muted">Phone Number *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formPhone}
+                        onChange={(e) => setFormPhone(e.target.value)}
+                        placeholder="9537293756"
+                        className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-text-muted">Email Address</label>
+                      <input
+                        type="email"
+                        value={formEmail}
+                        onChange={(e) => setFormEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-text-muted">Status</label>
+                      <div className="flex gap-2">
+                        {['pending', 'contacted', 'closed'].map((st) => (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => setFormStatus(st)}
+                            className={`px-3 py-1.5 uppercase font-bold rounded-lg border transition-all ${
+                              formStatus === st
+                                ? 'bg-primary/20 border-primary text-primary'
+                                : 'bg-bg-body border-border-color text-text-muted hover:bg-bg-body/70'
+                            }`}
+                          >
+                            {st}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-text-muted">Inquiry Message</label>
+                      <textarea
+                        value={formMessage}
+                        onChange={(e) => setFormMessage(e.target.value)}
+                        rows={3}
+                        placeholder="Message submitted by user..."
+                        className="w-full p-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-text-muted">Internal Admin Notes</label>
+                      <textarea
+                        value={formNotes}
+                        onChange={(e) => setFormNotes(e.target.value)}
+                        rows={3}
+                        placeholder="E.g. Called and scheduled for root canal on next Monday..."
+                        className="w-full p-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary resize-none"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="font-semibold text-text-muted">Phone Number *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formPhone}
-                      onChange={(e) => setFormPhone(e.target.value)}
-                      placeholder="9537293756"
-                      className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary"
-                    />
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="font-semibold text-text-muted">Email Address</label>
-                    <input
-                      type="email"
-                      value={formEmail}
-                      onChange={(e) => setFormEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      className="w-full h-9 px-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-text-muted">Status</label>
-                  <div className="flex gap-2">
-                    {['pending', 'contacted', 'closed'].map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setFormStatus(st)}
-                        className={`px-3 py-1.5 uppercase font-bold rounded-lg border transition-all ${
-                          formStatus === st
-                            ? 'bg-primary/20 border-primary text-primary'
-                            : 'bg-bg-body border-border-color text-text-muted hover:bg-bg-body/70'
-                        }`}
-                      >
-                        {st}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-text-muted">Inquiry Message</label>
-                  <textarea
-                    value={formMessage}
-                    onChange={(e) => setFormMessage(e.target.value)}
-                    rows={2}
-                    placeholder="Message submitted by user..."
-                    className="w-full p-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary resize-none"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-text-muted">Internal Admin Notes</label>
-                  <textarea
-                    value={formNotes}
-                    onChange={(e) => setFormNotes(e.target.value)}
-                    rows={2}
-                    placeholder="E.g. Called and scheduled for root canal on next Monday..."
-                    className="w-full p-3 bg-bg-body border border-border-color rounded-lg focus:outline-none focus:border-primary resize-none"
-                  />
-                </div>
-
-                <div className="border-t border-border-color pt-4 flex justify-end gap-3">
+                <div className="border-t border-border-color pt-4 mt-6 flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => setIsAddEditModalOpen(false)}
-                    className="px-4 h-9 rounded-lg border border-border-color text-text-main hover:bg-bg-body"
+                    className="px-4 h-10 rounded-xl border border-border-color text-text-main font-medium text-xs hover:bg-bg-body"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 h-9 bg-primary text-white rounded-lg font-semibold hover:bg-primary-hover shadow-sm"
+                    className="px-4 h-10 bg-primary text-white rounded-xl font-medium text-xs hover:bg-primary-hover shadow-sm"
                   >
                     Save
                   </button>

@@ -9,17 +9,18 @@ import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/openwa';
 import { useCaptureInvoice } from '../../lib/useCaptureInvoice';
 import { useClinic } from '../../context/ClinicContext';
 
-const CLINIC = {
-  name: '${clinic.name}',
-  tagline: 'Advance Dental Care Hospital',
-  addressLine1: 'B 394601, 6-7, Lal Bahadur Shastri Rd,',
-  addressLine2: 'Rushikesh Nagar, Bardoli, Gujarat 394601',
-  phone: '+91 84870 05334',
-  email: 'atodariyaveer1331@gmail.com',
-};
+
 
 export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
   const { clinic } = useClinic();
+  const CLINIC = {
+    name: clinic.name,
+    tagline: clinic.tagline || 'Advance Dental Care Hospital',
+    addressLine1: clinic.address,
+    addressLine2: '',
+    phone: clinic.phone,
+    email: clinic.email || 'info@dentease.com',
+  };
   const [patients] = useLocalStorage('patients', mockPatientsList);
   const [doctors] = useLocalStorage('doctors', mockDoctors);
   const { capturePdf } = useCaptureInvoice();
@@ -35,8 +36,10 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
 
   if (!invoice) return null;
 
-  const balance = Math.max(0, invoice.amount - invoice.paid);
-  const dateStr = new Date(invoice.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const amount = Number(invoice.amount ?? 0);
+  const paid = Number(invoice.paid ?? 0);
+  const balance = Math.max(0, amount - paid);
+  const dateStr = invoice.date ? new Date(invoice.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 
   const handlePrint = () => {
     document.body.classList.add('printing-invoice');
@@ -54,7 +57,7 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
 
     const payLink = `${window.location.origin}/pay/${invoice.id}`;
     const message = [
-      `Dear ${invoice.patient},`,
+      `Dear ${invoice.patient || 'Patient'},`,
       ``,
       `Please find attached your invoice from ${clinic.name}.`,
       ``,
@@ -63,8 +66,8 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
       `Date         : ${dateStr}`,
       doctor ? `Doctor       : ${doctor.name}` : '',
       ``,
-      `Total Amount : Rs. ${invoice.amount.toLocaleString()}`,
-      `Amount Paid  : Rs. ${invoice.paid.toLocaleString()}`,
+      `Total Amount : Rs. ${amount.toLocaleString()}`,
+      `Amount Paid  : Rs. ${paid.toLocaleString()}`,
       balance > 0
         ? `Balance Due  : Rs. ${balance.toLocaleString()}`
         : `Status       : Paid in Full`,
@@ -73,7 +76,7 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
         ? `You may pay the balance online at:\n${payLink}\n\nAlternatively, scan the QR code in the attached invoice to pay via UPI.`
         : `Thank you for settling your payment promptly.`,
       ``,
-      `For any queries, please contact us at +91 84870 05334.`,
+      `For any queries, please contact us at ${clinic.phone}.`,
       ``,
       `Regards,`,
       `${clinic.name}`,
@@ -227,12 +230,12 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
                         <td className="px-4 py-3 font-semibold text-gray-900">
                           {invoice.treatment}
                           <div className="text-xs text-gray-500 font-normal mt-0.5">
-                            Performed on {new Date(invoice.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            Performed on {invoice.date ? new Date(invoice.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-center text-gray-700">1</td>
-                        <td className="px-4 py-3 text-right text-gray-700">₹{invoice.amount.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-gray-900">₹{invoice.amount.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">₹{amount.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-gray-900">₹{amount.toLocaleString()}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -243,7 +246,7 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
                   <div className="w-full md:w-72 space-y-2 text-sm">
                     <div className="flex justify-between text-gray-700">
                       <span>Subtotal</span>
-                      <span className="font-medium">₹{invoice.amount.toLocaleString()}</span>
+                      <span className="font-medium">₹{amount.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-gray-700">
                       <span>Tax (GST)</span>
@@ -251,11 +254,11 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
                     </div>
                     <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200 text-gray-900">
                       <span>Total</span>
-                      <span>₹{invoice.amount.toLocaleString()}</span>
+                      <span>₹{amount.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-emerald-700">
                       <span>Paid</span>
-                      <span className="font-bold">₹{invoice.paid.toLocaleString()}</span>
+                      <span className="font-bold">₹{paid.toLocaleString()}</span>
                     </div>
                     {balance > 0 && (
                       <div className="flex justify-between bg-red-50 -mx-3 px-3 py-2 rounded-lg text-red-700">
@@ -284,7 +287,7 @@ export default function InvoiceTemplate({ invoice, isOpen, onClose }) {
                       </div>
                       {doctor?.upiId && (
                         <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&qzone=1&data=${encodeURIComponent(`upi://pay?pa=${doctor.upiId}&pn=Devnayan+Dental+Clinic&am=${balance}&tn=Invoice+${invoice.id}`)}`}
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&qzone=1&data=${encodeURIComponent(`upi://pay?pa=${doctor.upiId}&pn=${encodeURIComponent(clinic.name)}&am=${balance}&tn=Invoice+${invoice.id}`)}`}
                           alt="UPI QR Code"
                           className="w-20 h-20 rounded-lg border border-amber-200 shrink-0"
                         />

@@ -7,7 +7,6 @@ import Select from '../components/ui/Select';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import PatientTable from '../components/patients/PatientTable';
 import PatientDrawer from '../components/patients/PatientDrawer';
-import AddPatientModal from '../components/patients/AddPatientModal';
 import { mockPatientsList } from '../data/patients';
 import { useLocalStorage } from '../lib/useLocalStorage';
 
@@ -30,8 +29,8 @@ export default function Patients() {
   const [balanceFilter, setBalanceFilter] = useState('All');
 
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [initialEditMode, setInitialEditMode] = useState(false);
   const [deletingPatient, setDeletingPatient] = useState(null);
 
   React.useEffect(() => {
@@ -68,14 +67,21 @@ export default function Patients() {
   }, [patients, searchQuery, statusFilter, balanceFilter]);
 
   const openAdd = () => {
-    setEditingPatient(null);
-    setIsAddModalOpen(true);
+    setSelectedPatient(null);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
   };
 
   const openEdit = (patient) => {
-    setEditingPatient(patient);
-    setIsAddModalOpen(true);
-    setSelectedPatient(null);
+    setSelectedPatient(patient);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
+  };
+
+  const openView = (patient) => {
+    setSelectedPatient(patient);
+    setInitialEditMode(false);
+    setIsDrawerOpen(true);
   };
 
   const handleSubmit = (patient, isEdit) => {
@@ -160,31 +166,27 @@ export default function Patients() {
 
         <PatientTable
           patients={filteredPatients}
-          onRowClick={setSelectedPatient}
+          onRowClick={openView}
           onEdit={openEdit}
           onDelete={setDeletingPatient}
         />
       </motion.div>
 
-      {selectedPatient && (
-        <PatientDrawer
-          patient={selectedPatient}
-          isOpen={!!selectedPatient}
-          onClose={() => setSelectedPatient(null)}
-          onEdit={() => openEdit(selectedPatient)}
-          onDelete={() => setDeletingPatient(selectedPatient)}
-          onUpdate={(updated) => {
-            setPatients(prev => prev.map(p => p.id === updated.id ? updated : p));
+      <PatientDrawer
+        patient={selectedPatient}
+        isOpen={isDrawerOpen}
+        onClose={() => { setIsDrawerOpen(false); setSelectedPatient(null); }}
+        initialEditMode={initialEditMode}
+        onDelete={() => setDeletingPatient(selectedPatient)}
+        onUpdate={(updated, isEdit) => {
+          handleSubmit(updated, isEdit);
+          if (isEdit) {
             setSelectedPatient(updated);
-          }}
-        />
-      )}
-
-      <AddPatientModal
-        isOpen={isAddModalOpen}
-        onClose={() => { setIsAddModalOpen(false); setEditingPatient(null); }}
-        onSubmit={handleSubmit}
-        initialPatient={editingPatient}
+          } else {
+            setSelectedPatient(null);
+            setIsDrawerOpen(false);
+          }
+        }}
       />
 
       <ConfirmDialog

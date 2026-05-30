@@ -7,7 +7,6 @@ import AppLayout from '../components/layout/AppLayout';
 import Select from '../components/ui/Select';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import StatusBadge from '../components/ui/StatusBadge';
-import InvoiceModal from '../components/billing/InvoiceModal';
 import InvoiceDrawer from '../components/billing/InvoiceDrawer';
 import InvoiceTemplate from '../components/billing/InvoiceTemplate';
 import PaymentDialog from '../components/billing/PaymentDialog';
@@ -33,8 +32,8 @@ export default function Billing() {
   const [filter, setFilter] = useState('All');
   const [sendingInvoice, setSendingInvoice] = useState(null); // invoice being PDF-captured
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [initialEditMode, setInitialEditMode] = useState(false);
   const [defaultPatientId, setDefaultPatientId] = useState(null);
   const [viewingInvoice, setViewingInvoice] = useState(null);
   const [deletingInvoice, setDeletingInvoice] = useState(null);
@@ -48,8 +47,9 @@ export default function Billing() {
   useEffect(() => {
     if (location.state?.invoiceForPatientId) {
       setDefaultPatientId(location.state.invoiceForPatientId);
-      setEditingInvoice(null);
-      setIsModalOpen(true);
+      setViewingInvoice(null);
+      setInitialEditMode(true);
+      setIsDrawerOpen(true);
       window.history.replaceState({}, '');
     }
   }, [location.state]);
@@ -75,14 +75,21 @@ export default function Billing() {
   }, [invoices]);
 
   const openAdd = () => {
-    setEditingInvoice(null);
-    setIsModalOpen(true);
+    setViewingInvoice(null);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
   };
 
   const openEdit = (inv) => {
-    setEditingInvoice(inv);
-    setIsModalOpen(true);
-    setViewingInvoice(null);
+    setViewingInvoice(inv);
+    setInitialEditMode(true);
+    setIsDrawerOpen(true);
+  };
+
+  const openView = (inv) => {
+    setViewingInvoice(inv);
+    setInitialEditMode(false);
+    setIsDrawerOpen(true);
   };
 
   const handleSubmit = (invoice, isEdit) => {
@@ -128,12 +135,14 @@ export default function Billing() {
       toast.error('No phone number on record for this patient');
       return;
     }
-    const balance = Math.max(0, inv.amount - inv.paid);
-    const dateStr = new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const invAmount = Number(inv.amount ?? 0);
+    const invPaid = Number(inv.paid ?? 0);
+    const balance = Math.max(0, invAmount - invPaid);
+    const dateStr = inv.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
     const payLink = `${window.location.origin}/pay/${inv.id}`;
 
     const message = [
-      `Dear ${inv.patient},`,
+      `Dear ${inv.patient || 'Patient'},`,
       ``,
       inv.status === 'Paid'
         ? `Your invoice has been fully settled. Thank you for your prompt payment.`
@@ -144,8 +153,8 @@ export default function Billing() {
       `Date         : ${dateStr}`,
       doctor ? `Doctor       : ${doctor.name}` : '',
       ``,
-      `Total Amount : Rs. ${inv.amount.toLocaleString()}`,
-      `Amount Paid  : Rs. ${inv.paid.toLocaleString()}`,
+      `Total Amount : Rs. ${invAmount.toLocaleString()}`,
+      `Amount Paid  : Rs. ${invPaid.toLocaleString()}`,
       balance > 0
         ? `Balance Due  : Rs. ${balance.toLocaleString()}`
         : `Status       : Paid in Full`,
@@ -154,7 +163,7 @@ export default function Billing() {
         ? `Please pay the balance at your earliest convenience.\nPay online: ${payLink}\n\nScan the QR code in the attached PDF to pay via UPI (GPay / PhonePe / Paytm).`
         : `We appreciate your continued trust in ${clinic.name}.`,
       ``,
-      `For any queries, contact us at +91 84870 05334.`,
+      `For any queries, contact us at ${clinic.phone}.`,
       ``,
       `Regards,`,
       `${clinic.name}`,
@@ -265,7 +274,7 @@ export default function Billing() {
               {filtered.map(inv => (
                 <tr
                   key={inv.id}
-                  onClick={() => setViewingInvoice(inv)}
+                  onClick={() => openView(inv)}
                   className="border-b border-border-color last:border-0 hover:bg-white/[0.03] transition-colors cursor-pointer"
                 >
                   <td className="py-3 pl-4 font-mono text-[12px] text-text-muted">{inv.id}</td>
@@ -280,7 +289,7 @@ export default function Billing() {
                   <td className="py-3 pr-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setViewingInvoice(inv); }}
+                        onClick={(e) => { e.stopPropagation(); openView(inv); }}
                         className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/30 text-primary/80 shadow-sm hover:bg-primary/20 hover:border-primary/60 hover:text-primary flex items-center justify-center transition-colors"
                         title="View invoice"
                       >
@@ -332,7 +341,7 @@ export default function Billing() {
           {filtered.map(inv => (
             <div
               key={inv.id}
-              onClick={() => setViewingInvoice(inv)}
+              onClick={() => openView(inv)}
               className="bg-bg-body border border-border-color rounded-xl p-4 cursor-pointer active:bg-border-color/30 transition-all"
             >
               <div className="flex items-start justify-between mb-3">
@@ -359,23 +368,21 @@ export default function Billing() {
         </div>
       </motion.div>
 
-      <InvoiceModal
-        isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setEditingInvoice(null); setDefaultPatientId(null); }}
-        onSubmit={handleSubmit}
-        initialInvoice={editingInvoice}
-        nextId={nextInvoiceId(invoices)}
-        defaultPatientId={defaultPatientId}
-      />
-
       <InvoiceDrawer
         invoice={viewingInvoice}
-        isOpen={!!viewingInvoice}
-        onClose={() => setViewingInvoice(null)}
-        onEdit={() => openEdit(viewingInvoice)}
-        onDelete={() => setDeletingInvoice(viewingInvoice)}
-        onViewFull={() => setFullInvoice(viewingInvoice)}
-        onTakePayment={() => setPayingInvoice(viewingInvoice)}
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setViewingInvoice(null);
+          setDefaultPatientId(null);
+        }}
+        onUpdate={handleSubmit}
+        onDelete={(inv) => setDeletingInvoice(inv)}
+        onViewFull={(inv) => setFullInvoice(inv)}
+        onTakePayment={(inv) => setPayingInvoice(inv)}
+        initialEditMode={initialEditMode}
+        nextId={nextInvoiceId(invoices)}
+        defaultPatientId={defaultPatientId}
       />
 
       <InvoiceTemplate
@@ -405,7 +412,7 @@ export default function Billing() {
         const { inv, patient, doctor } = sendingInvoice;
         const bal = Math.max(0, inv.amount - inv.paid);
         const dateStr = new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        const upiUrl = doctor?.upiId ? `upi://pay?pa=${doctor.upiId}&pn=Devnayan+Dental+Clinic&am=${bal}&tn=Invoice+${inv.id}` : null;
+        const upiUrl = doctor?.upiId ? `upi://pay?pa=${doctor.upiId}&pn=${encodeURIComponent(clinic.name)}&am=${bal}&tn=Invoice+${inv.id}` : null;
         return (
           <div style={{ position: 'fixed', top: -9999, left: -9999, width: 595, pointerEvents: 'none' }}>
             <div id="billing-invoice-capture" style={{ background: '#fff', padding: 40, fontFamily: 'Arial, sans-serif', color: '#1f2937' }}>
@@ -415,8 +422,8 @@ export default function Billing() {
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 700 }}>{clinic.name}</div>
                   <div style={{ fontSize: 10, opacity: 0.85, marginTop: 3 }}>Advance Dental Care Hospital</div>
-                  <div style={{ fontSize: 9, opacity: 0.7, marginTop: 8 }}>B 394601, 6-7, Lal Bahadur Shastri Rd, Bardoli, Gujarat</div>
-                  <div style={{ fontSize: 9, opacity: 0.7, marginTop: 2 }}>+91 84870 05334</div>
+                  <div style={{ fontSize: 9, opacity: 0.7, marginTop: 8 }}>{clinic.address}</div>
+                  <div style={{ fontSize: 9, opacity: 0.7, marginTop: 2 }}>{clinic.phone}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.75 }}>Invoice</div>

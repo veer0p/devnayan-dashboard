@@ -11,6 +11,9 @@ import {
   Stethoscope,
   List,
   WhatsappLogo,
+  Eye,
+  PencilSimple,
+  Trash,
 } from '@phosphor-icons/react';
 import { useLocation } from 'react-router-dom';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
@@ -51,10 +54,26 @@ const DEFAULT_PALETTE = DOCTOR_PALETTE['bg-primary'];
 const paletteFromDoctor = (doctor) => DOCTOR_PALETTE[doctor?.color] || DEFAULT_PALETTE;
 
 const statusTone = {
-  Confirmed: { dot: '#34D399', text: 'text-emerald-300', bg: 'bg-emerald-500/10' },
-  Completed: { dot: '#60A5FA', text: 'text-blue-300',    bg: 'bg-blue-500/10' },
-  Pending:   { dot: '#FBBF24', text: 'text-amber-300',   bg: 'bg-amber-500/10' },
-  Cancelled: { dot: '#9CA3AF', text: 'text-zinc-400',    bg: 'bg-zinc-500/10' },
+  Confirmed: { 
+    dot: '#10B981', 
+    text: 'text-emerald-700 bg-emerald-50 border border-emerald-200/50 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:border-transparent', 
+    bg: '' 
+  },
+  Completed: { 
+    dot: '#3B82F6', 
+    text: 'text-blue-700 bg-blue-50 border border-blue-200/50 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20 dark:border-transparent', 
+    bg: '' 
+  },
+  Pending:   { 
+    dot: '#F59E0B', 
+    text: 'text-amber-800 bg-amber-50 border border-amber-200/50 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20 dark:border-transparent', 
+    bg: '' 
+  },
+  Cancelled: { 
+    dot: '#6B7280', 
+    text: 'text-zinc-700 bg-zinc-50 border border-zinc-200/50 dark:text-zinc-400 dark:bg-zinc-500/10 dark:border-zinc-500/20 dark:border-transparent', 
+    bg: '' 
+  },
 };
 
 // --- Hover tooltip (rich, portaled, no browser title) ----------------------
@@ -189,14 +208,15 @@ const EventChip = ({ event, doctors, view }) => {
           ref={ref}
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
-          className="flex items-center h-full text-[11px] truncate px-2"
+          className="flex items-center h-full text-[11px] truncate px-2 rounded-md border"
           style={{
             background: palette.soft,
             borderLeft: `3px solid ${palette.base}`,
-            color: '#F9FAFB',
+            borderColor: palette.border,
+            color: palette.base,
           }}
         >
-          <span className="font-medium truncate">{event.patientName}</span>
+          <span className="font-semibold truncate">{event.patientName}</span>
         </div>
         <AnimatePresence>
           {hovered && <HoverPopover event={event} doctor={doctor} palette={palette} anchorRect={rect} />}
@@ -331,8 +351,7 @@ const PageToolbar = ({ view, label, onNavigate, onViewChange, hideNav }) => {
   );
 };
 
-// --- Desktop List view (proper table — matches Patients/Billing styling) ---
-const AppointmentsTable = ({ appointments, doctors, onSelect, onRemind }) => {
+const AppointmentsTable = ({ appointments, doctors, onSelect, onEdit, onDelete, onRemind }) => {
   const sorted = useMemo(
     () => [...appointments].sort((a, b) => new Date(a.start) - new Date(b.start)),
     [appointments]
@@ -414,17 +433,36 @@ const AppointmentsTable = ({ appointments, doctors, onSelect, onRemind }) => {
                   </span>
                 </td>
                 <td className="py-2.5 pr-5 whitespace-nowrap">
-                  {app.status === 'Pending' ? (
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={(e) => { e.stopPropagation(); onRemind(app, e); }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/25 active:scale-95 text-[11px] font-semibold transition-all"
+                      onClick={() => onSelect(app)}
+                      className="w-8 h-8 rounded-lg border border-border-color text-text-muted hover:text-text-main hover:bg-bg-body flex items-center justify-center transition-all active:scale-95"
+                      title="View Details"
                     >
-                      <WhatsappLogo size={13} weight="fill" />
-                      Send Reminder
+                      <Eye size={15} />
                     </button>
-                  ) : (
-                    <span className="text-text-muted/30 text-[11px]">—</span>
-                  )}
+                    <button
+                      onClick={() => onEdit(app)}
+                      className="w-8 h-8 rounded-lg border border-border-color text-text-muted hover:text-text-main hover:bg-bg-body flex items-center justify-center transition-all active:scale-95"
+                      title="Edit Appointment"
+                    >
+                      <PencilSimple size={15} />
+                    </button>
+                    <button
+                      onClick={(e) => onRemind(app, e)}
+                      className="w-8 h-8 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/20 flex items-center justify-center transition-all active:scale-95"
+                      title="Send WhatsApp Reminder"
+                    >
+                      <WhatsappLogo size={15} weight="fill" />
+                    </button>
+                    <button
+                      onClick={(e) => onDelete(app, e)}
+                      className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 flex items-center justify-center transition-all active:scale-95"
+                      title="Delete Appointment"
+                    >
+                      <Trash size={15} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
@@ -443,7 +481,7 @@ const getDayLabel = (date) => {
   return format(date, 'EEEE');
 };
 
-const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
+const MobileListView = ({ appointments, onSelect, onEdit, onDelete, onRemind, doctors }) => {
   const grouped = appointments.reduce((acc, app) => {
     const dateKey = format(new Date(app.start), 'yyyy-MM-dd');
     if (!acc[dateKey]) acc[dateKey] = [];
@@ -504,7 +542,7 @@ const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
                       style={{ background: palette.base }}
                     />
 
-                    <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div
                           className="w-9 h-9 rounded-xl font-semibold flex items-center justify-center text-[13px] shrink-0"
@@ -521,40 +559,62 @@ const MobileListView = ({ appointments, onSelect, doctors, onRemind }) => {
                           <div className="text-[12px] text-text-muted truncate">{app.treatmentName}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${tone.bg} ${tone.text}`}>
-                          <span className="w-1 h-1 rounded-full" style={{ background: tone.dot }} />
-                          {app.status}
-                        </span>
-                        {app.status === 'Pending' && (
-                          <button
-                            onClick={(e) => onRemind(app, e)}
-                            title="Send WhatsApp Reminder"
-                            className="w-7 h-7 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/20 transition-all flex items-center justify-center shrink-0 active:scale-95"
-                          >
-                            <WhatsappLogo size={14} weight="fill" />
-                          </button>
-                        )}
-                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${tone.bg} ${tone.text}`}>
+                        <span className="w-1 h-1 rounded-full" style={{ background: tone.dot }} />
+                        {app.status}
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-3 text-[11px] text-text-muted flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <Clock size={11} />
-                        <span className="font-mono">
-                          {format(new Date(app.start), 'h:mm a')} – {format(new Date(app.end), 'h:mm a')}
+                    <div className="flex items-center justify-between gap-3 pt-3 border-t border-border-color/40">
+                      <div className="flex items-center gap-3 text-[11px] text-text-muted flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Clock size={11} />
+                          <span className="font-mono">
+                            {format(new Date(app.start), 'h:mm a')} – {format(new Date(app.end), 'h:mm a')}
+                          </span>
                         </span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={11} />
-                        {app.chair}
-                      </span>
-                      {doctor && (
-                        <span className="flex items-center gap-1" style={{ color: palette.base }}>
-                          <Stethoscope size={11} />
-                          {doctor.initials}
+                        <span className="flex items-center gap-1">
+                          <MapPin size={11} />
+                          {app.chair}
                         </span>
-                      )}
+                        {doctor && (
+                          <span className="flex items-center gap-1" style={{ color: palette.base }}>
+                            <Stethoscope size={11} />
+                            {doctor.initials}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onSelect(app)}
+                          className="w-7 h-7 rounded-lg border border-border-color text-text-muted hover:text-text-main hover:bg-bg-body flex items-center justify-center transition-all active:scale-95"
+                          title="View Details"
+                        >
+                          <Eye size={13} />
+                        </button>
+                        <button
+                          onClick={() => onEdit(app)}
+                          className="w-7 h-7 rounded-lg border border-border-color text-text-muted hover:text-text-main hover:bg-bg-body flex items-center justify-center transition-all active:scale-95"
+                          title="Edit Appointment"
+                        >
+                          <PencilSimple size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => onRemind(app, e)}
+                          className="w-7 h-7 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/20 flex items-center justify-center transition-all active:scale-95"
+                          title="Send WhatsApp Reminder"
+                        >
+                          <WhatsappLogo size={13} weight="fill" />
+                        </button>
+                        <button
+                          onClick={(e) => onDelete(app, e)}
+                          className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 flex items-center justify-center transition-all active:scale-95"
+                          title="Delete Appointment"
+                        >
+                          <Trash size={13} />
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 );
@@ -698,9 +758,9 @@ export default function Appointments() {
       doctor ? `Doctor       : ${doctor.name}` : '',
       app.chairId ? `Chair        : Chair ${app.chairId}` : '',
       ``,
-      `Location: Lal Bahadur Shastri Rd, Rushikesh Nagar, Bardoli, Gujarat`,
+      `Location: ${clinic.address}`,
       ``,
-      `Please arrive 5 minutes before your scheduled time. To reschedule or for any queries, contact us at +91 84870 05334.`,
+      `Please arrive 5 minutes before your scheduled time. To reschedule or for any queries, contact us at ${clinic.phone}.`,
       ``,
       `We look forward to seeing you.`,
       ``,
@@ -728,10 +788,17 @@ export default function Appointments() {
   const handleSubmit = (appointment, isEdit) => {
     if (isEdit) {
       setAppointments(prev => prev.map(a => a.id === appointment.id ? appointment : a));
-      setSelectedEvent({ ...appointment, title: appointment.patientName });
+      if (selectedEvent && selectedEvent.id === appointment.id) {
+        setSelectedEvent({ ...appointment, title: appointment.patientName });
+      }
     } else {
       setAppointments(prev => [...prev, appointment]);
     }
+  };
+
+  const handleEditClick = (app) => {
+    setEditingAppointment(app);
+    setIsModalOpen(true);
   };
 
   const openEdit = () => {
@@ -794,13 +861,13 @@ export default function Appointments() {
             {todayStats.total > 0 && (
               <>
                 <span className="text-text-muted/40">·</span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
-                  <span className="w-1 h-1 rounded-full bg-primary" />
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/25 text-primary-hover dark:text-primary dark:border-transparent text-[11px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                   {todayStats.total} today
                 </span>
                 {todayStats.pending > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[11px] font-semibold">
-                    <span className="w-1 h-1 rounded-full bg-amber-400" />
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/50 dark:bg-amber-500/10 dark:text-amber-300 dark:border-transparent text-[11px] font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
                     {todayStats.pending} pending
                   </span>
                 )}
@@ -814,14 +881,6 @@ export default function Appointments() {
           animate={{ opacity: 1, x: 0 }}
           className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center"
         >
-          <Select
-            value={doctorFilter}
-            onChange={setDoctorFilter}
-            options={doctorOptions}
-            className="w-full sm:w-52"
-            size="md"
-          />
-          
           {/* View mode segmented switcher */}
           <div className="flex items-center gap-0.5 bg-bg-body/40 p-1 rounded-lg border border-border-color shrink-0 self-stretch sm:self-auto">
             <button
@@ -867,37 +926,41 @@ export default function Appointments() {
         </motion.div>
       </div>
 
-      {/* Doctor legend — pastel chip row */}
-      {doctorFilter === 'All' && doctors.length > 1 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="hidden md:flex flex-wrap items-center gap-1.5 mb-4"
-        >
-          {doctors.map(d => {
-            const palette = paletteFromDoctor(d);
-            return (
-              <div
-                key={d.id}
-                className="inline-flex items-center gap-2 pl-2 pr-3 py-1 rounded-full text-[11px] border"
-                style={{
-                  background: palette.soft,
-                  borderColor: palette.border,
-                }}
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: palette.base }}
-                />
-                <span style={{ color: palette.base }} className="font-semibold">
-                  {d.initials}
-                </span>
-                <span className="text-text-muted">{d.name.replace(/^Dr\.\s*/, '')}</span>
-              </div>
-            );
-          })}
-        </motion.div>
-      )}
+      {/* Doctor Filter Chips */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-wrap items-center gap-1.5 mb-6 overflow-x-auto no-scrollbar py-1"
+      >
+        {doctorOptions.map(opt => {
+          const isActive = doctorFilter === opt.value;
+          const doc = doctors.find(d => d.id === opt.value);
+          const palette = doc ? paletteFromDoctor(doc) : { base: 'var(--color-primary)', soft: 'rgba(200, 144, 43, 0.1)', border: 'rgba(200, 144, 43, 0.2)' };
+          
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setDoctorFilter(opt.value)}
+              className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold border transition-all duration-200 whitespace-nowrap active:scale-95 flex items-center gap-1.5 ${
+                isActive
+                  ? 'shadow-sm'
+                  : 'bg-bg-card border-border-color text-text-muted hover:text-text-main hover:border-border-strong'
+              }`}
+              style={isActive ? {
+                backgroundColor: palette.soft,
+                borderColor: palette.base,
+                color: palette.base,
+              } : {}}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: palette.base }}
+              />
+              {opt.label}
+            </button>
+          );
+        })}
+      </motion.div>
 
       {/* Mobile list view */}
       {viewMode === 'list' && (
@@ -906,7 +969,14 @@ export default function Appointments() {
           animate={{ opacity: 1, y: 0 }}
           className="md:hidden"
         >
-          <MobileListView appointments={filteredAppointments} onSelect={handleSelectEvent} doctors={doctors} onRemind={handleQuickReminder} />
+          <MobileListView
+            appointments={filteredAppointments}
+            onSelect={handleSelectEvent}
+            onEdit={handleEditClick}
+            onDelete={(app) => setDeletingAppointment(app)}
+            doctors={doctors}
+            onRemind={handleQuickReminder}
+          />
         </motion.div>
       )}
 
@@ -1146,6 +1216,8 @@ export default function Appointments() {
             appointments={filteredAppointments}
             doctors={doctors}
             onSelect={handleSelectEvent}
+            onEdit={handleEditClick}
+            onDelete={(app) => setDeletingAppointment(app)}
             onRemind={handleQuickReminder}
           />
         ) : currentView === 'agenda' ? (
@@ -1153,6 +1225,8 @@ export default function Appointments() {
             appointments={filteredAppointments}
             doctors={doctors}
             onSelect={handleSelectEvent}
+            onEdit={handleEditClick}
+            onDelete={(app) => setDeletingAppointment(app)}
             onRemind={handleQuickReminder}
           />
         ) : (

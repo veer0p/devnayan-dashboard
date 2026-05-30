@@ -1,3 +1,6 @@
+import devnayanDrImage from "../assets/dr.png";
+import jankiDrImage from "../assets/janki-dr.png";
+
 export const clinics = {
   "dr-rajendra-desai": {
     id: "dr-rajendra-desai",
@@ -17,6 +20,7 @@ export const clinics = {
     id: "devnayan",
     name: "Devnayan Dental Clinic",
     doctorName: "Dr. Chintan Sayania",
+    doctorImage: devnayanDrImage,
     address: "6-7, Lal Bahadur Shastri Rd, Rushikesh Nagar, Bardoli – 394601",
     phone: "+91 99135 20707",
     phoneRaw: "919913520707",
@@ -26,6 +30,21 @@ export const clinics = {
     website: null,
     mapEmbedUrl: "https://maps.google.com/maps?q=6-7,+Lal+Bahadur+Shastri+Rd,+Rushikesh+Nagar,+Bardoli&t=&z=15&ie=UTF8&iwloc=&output=embed",
     placeId: "ChIJmwAxrAxn4DsREY94fmb8Sos"
+  },
+  "janki": {
+    id: "janki",
+    name: "Janki Dental Care",
+    doctorName: "Dr. Janki Matroja",
+    doctorImage: jankiDrImage,
+    address: "Matru Krupa, 101, Naroli Rd, opposite Collector's Bungalow, Silvassa, Athal, Dadra and Nagar Haveli and Daman and Diu 396230",
+    phone: "+91 87801 49165",
+    phoneRaw: "918780149165",
+    hours: "Mon–Sat: 9 AM–8 PM | Sun: Closed",
+    rating: "5.0",
+    reviewsCount: "1",
+    website: null,
+    mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3742.676017647562!2d72.9994421!3d20.272267!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be0cb0046d2a161%3A0x1d5f8ac2aaa0459a!8m2!3d20.2723622!4d72.999467!10e5!14m1!1BCgIgAQ!16s%2Fg%2F11n3zxp8h_?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D",
+    placeId: "ChIJYaHSRgDL4DsRmiWkquKKXx0"
   },
   "phoenix": {
     id: "phoenix",
@@ -69,7 +88,6 @@ export const clinics = {
     mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.536780758706!2d73.10437797592732!3d21.131026084257048!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be0676d6376ce15%3A0x6e6aedb0f99a013e!2sDental%20spot!5e0!3m2!1sen!2sin!4v1779384303672!5m2!1sen!2sin",
     placeId: "ChIJFc52Y21n4DsRPgGa-bDtam4"
   },
-
   "jain": {
     id: "jain",
     name: "Jain Dental Clinic & Implant Center",
@@ -89,7 +107,7 @@ export const clinics = {
     name: "Vatsalya Dental Clinic & Implant Center",
     doctorName: "Chief Dental Surgeon",
     address: "1st Floor, Shivanjali Arcade, O-5, opp. Shishudeep Hospital, Hirachand Nagar, Bardoli – 394601",
-    phone: "+91 99999 00000", /* Fallback since not listed publicly */
+    phone: "+91 99999 00000",
     phoneRaw: "919999900000",
     hours: "Mon–Sat: 9:30 AM–1:30 PM, 3:30–7:30 PM",
     rating: "5.0",

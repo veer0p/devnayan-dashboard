@@ -18,7 +18,7 @@ export default function PatientTable({ patients, onRowClick, onEdit, onDelete })
     ``,
     `Regards,`,
     `${clinic.name}`,
-    `+91 84870 05334`,
+    clinic.phone,
   ].join('\n');
 
   if (patients.length === 0) {

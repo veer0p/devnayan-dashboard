@@ -20,13 +20,7 @@ import { mockPatientsList } from '../data/patients';
 import { mockDoctors } from '../data/doctors';
 import { useClinic } from '../context/ClinicContext';
 
-const CLINIC = {
-  name: '${clinic.name}',
-  tagline: 'Advance Dental Care Hospital',
-  address: 'Lal Bahadur Shastri Rd, Rushikesh Nagar, Bardoli, Gujarat 394601',
-  phone: '+91 84870 05334',
-  email: 'atodariyaveer1331@gmail.com',
-};
+
 
 const buildUpiUrl = ({ vpa, name, amount, note }) => {
   const params = new URLSearchParams({
@@ -44,6 +38,13 @@ const qrSrc = (data) =>
 
 export default function PublicPayment() {
   const { clinic } = useClinic();
+  const CLINIC = {
+    name: clinic.name,
+    tagline: clinic.tagline || 'Advance Dental Care Hospital',
+    address: clinic.address,
+    phone: clinic.phone,
+    email: clinic.email || 'info@dentease.com',
+  };
   const { invoiceId } = useParams();
   const [invoices, setInvoices] = useLocalStorage('invoices', mockInvoices);
   const [patients] = useLocalStorage('patients', mockPatientsList);
@@ -71,7 +72,7 @@ export default function PublicPayment() {
     return (
       <div className="min-h-screen bg-bg-body flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-bg-card border border-border-color rounded-2xl shadow-xl p-8 text-center space-y-4">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto">
             <WarningCircle size={32} weight="bold" />
           </div>
           <h2 className="text-xl font-bold text-text-main">Invoice Not Found</h2>
@@ -93,7 +94,7 @@ export default function PublicPayment() {
 
   const balance = Math.max(0, invoice.amount - invoice.paid);
   const upiId = doctor?.upiId || 'atodariyaveer1331@oksbi'; // Fallback to developer UPI
-  const doctorName = doctor?.name || '${clinic.name}';
+  const doctorName = doctor?.name || clinic.name;
 
   const upiUrl = buildUpiUrl({
     vpa: upiId,
@@ -142,10 +143,10 @@ export default function PublicPayment() {
             <div className="text-[10px] uppercase font-mono tracking-widest text-text-muted">Invoice Ref</div>
             <div className="text-lg font-bold font-mono text-text-main mt-0.5">{invoice.id}</div>
           </div>
-          <span className={`px-3 py-1 rounded-md text-xs font-bold ${
-            invoice.status === 'Paid' || paymentSuccess ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30' :
-            invoice.status === 'Partial' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30' :
-            'bg-rose-500/10 text-rose-500 border border-rose-500/30'
+          <span className={`px-3 py-1 rounded-md text-xs font-bold border ${
+            invoice.status === 'Paid' || paymentSuccess ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30' :
+            invoice.status === 'Partial' ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30' :
+            'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30'
           }`}>
             {paymentSuccess ? 'Paid' : invoice.status}
           </span>
@@ -154,7 +155,7 @@ export default function PublicPayment() {
         {/* Success State */}
         {(invoice.status === 'Paid' || paymentSuccess) ? (
           <div className="p-8 text-center space-y-6 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center animate-bounce">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 flex items-center justify-center animate-bounce">
               <Check size={44} weight="bold" />
             </div>
             <div>
@@ -179,7 +180,7 @@ export default function PublicPayment() {
                 </span>
               </div>
             </div>
-            <div className="text-xs text-text-muted flex items-center gap-1 bg-emerald-500/[0.04] border border-emerald-500/10 px-3 py-2 rounded-lg">
+            <div className="text-xs text-emerald-800 dark:text-emerald-400 flex items-center gap-1 bg-emerald-50 border border-emerald-200/50 dark:bg-emerald-500/[0.04] dark:border-emerald-500/10 px-3 py-2 rounded-lg">
               <Timer size={13} /> Saved directly in clinic ledger database
             </div>
           </div>
@@ -255,7 +256,7 @@ export default function PublicPayment() {
                 <button
                   onClick={handleSimulatePayment}
                   disabled={isProcessing}
-                  className="h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  className="h-11 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/20 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {isProcessing ? 'Verifying...' : 'Simulate Paid ✓'}
                 </button>

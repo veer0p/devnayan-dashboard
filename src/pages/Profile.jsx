@@ -17,8 +17,46 @@ const schedule = [
 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const today = days[new Date().getDay()];
 
+const getScheduleForClinic = (clinicId) => {
+  if (clinicId === 'janki') {
+    return [
+      { day: 'Monday', time: '9:00 AM - 8:00 PM' },
+      { day: 'Tuesday', time: '9:00 AM - 8:00 PM' },
+      { day: 'Wednesday', time: '9:00 AM - 8:00 PM' },
+      { day: 'Thursday', time: '9:00 AM - 8:00 PM' },
+      { day: 'Friday', time: '9:00 AM - 8:00 PM' },
+      { day: 'Saturday', time: '9:00 AM - 8:00 PM' },
+      { day: 'Sunday', time: 'Closed' },
+    ];
+  }
+  if (clinicId === 'dr-rajendra-desai') {
+    return [
+      { day: 'Monday', time: '10:00 AM - 1:00 PM & 3:00 PM - 7:00 PM' },
+      { day: 'Tuesday', time: '10:00 AM - 1:00 PM & 3:00 PM - 7:00 PM' },
+      { day: 'Wednesday', time: '10:00 AM - 1:00 PM & 3:00 PM - 7:00 PM' },
+      { day: 'Thursday', time: '10:00 AM - 1:00 PM & 3:00 PM - 7:00 PM' },
+      { day: 'Friday', time: '10:00 AM - 1:00 PM & 3:00 PM - 7:00 PM' },
+      { day: 'Saturday', time: '10:00 AM - 1:00 PM & 3:00 PM - 7:00 PM' },
+      { day: 'Sunday', time: 'Closed' },
+    ];
+  }
+  return [
+    { day: 'Monday', time: '9:00 AM - 1:00 PM & 3:00 PM - 8:00 PM' },
+    { day: 'Tuesday', time: '9:00 AM - 1:00 PM & 3:00 PM - 8:00 PM' },
+    { day: 'Wednesday', time: '9:00 AM - 1:00 PM & 3:00 PM - 8:00 PM' },
+    { day: 'Thursday', time: '9:00 AM - 1:00 PM & 3:00 PM - 8:00 PM' },
+    { day: 'Friday', time: '9:00 AM - 1:00 PM & 3:00 PM - 8:00 PM' },
+    { day: 'Saturday', time: '9:00 AM - 1:00 PM & 3:00 PM - 8:00 PM' },
+    { day: 'Sunday', time: 'Closed' },
+  ];
+};
+
 export default function Profile() {
-  const { clinic } = useClinic();
+  const { clinic, activeClinicId } = useClinic();
+  const schedule = getScheduleForClinic(activeClinicId);
+  const email = activeClinicId === 'devnayan' ? 'sayaniachintan@gmail.com' : activeClinicId === 'janki' ? 'jankidentalcare@gmail.com' : `contact@${activeClinicId}.com`;
+  const tagline = activeClinicId === 'devnayan' ? 'Advance Dental Care Hospital' : activeClinicId === 'janki' ? 'Janki Dental Care & Implant Centre' : 'Advance Dental Care Clinic';
+
   return (
     <AppLayout>
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-6">
@@ -31,11 +69,11 @@ export default function Profile() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-bg-card border border-border-color rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-color">
             <div className="w-16 h-16 rounded-2xl bg-primary text-white text-2xl font-bold flex items-center justify-center shadow-md shadow-primary/20">
-              D
+              {clinic.name ? clinic.name.charAt(0) : 'D'}
             </div>
             <div>
               <h2 className="text-xl font-bold">{clinic.name}</h2>
-              <p className="text-sm text-primary font-medium">Advance Dental Care Hospital</p>
+              <p className="text-sm text-primary font-medium">{tagline}</p>
             </div>
           </div>
 
@@ -44,8 +82,8 @@ export default function Profile() {
               <MapPin size={20} className="text-primary shrink-0 mt-0.5" />
               <div>
                 <div className="text-xs text-text-muted font-medium mb-1">Address</div>
-                <a href="https://maps.app.goo.gl/aEDX8fUtLXwMdm1m7" target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-primary transition-colors">
-                  B 394601, 6-7, Lal Bahadur Shastri Rd, Rushikesh Nagar, Radhabaug Society, Bardoli, Gujarat 394601
+                <a href={`https://maps.google.com/?q=${encodeURIComponent(clinic.address)}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-primary transition-colors">
+                  {clinic.address}
                 </a>
               </div>
             </div>
@@ -53,21 +91,21 @@ export default function Profile() {
               <Phone size={20} className="text-primary shrink-0 mt-0.5" />
               <div>
                 <div className="text-xs text-text-muted font-medium mb-1">Phone</div>
-                <a href="tel:+912622227071" className="text-sm font-medium hover:text-primary transition-colors">02622-227071</a>
+                <a href={`tel:${clinic.phoneRaw}`} className="text-sm font-medium hover:text-primary transition-colors">{clinic.phone}</a>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <WhatsappLogo size={20} className="text-emerald-500 shrink-0 mt-0.5" />
               <div>
                 <div className="text-xs text-text-muted font-medium mb-1">WhatsApp</div>
-                <a href="tel:+919913520707" className="text-sm font-medium hover:text-primary transition-colors">99135 20707</a>
+                <a href={`https://wa.me/${clinic.phoneRaw}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-primary transition-colors">{clinic.phone}</a>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Envelope size={20} className="text-primary shrink-0 mt-0.5" />
               <div>
                 <div className="text-xs text-text-muted font-medium mb-1">Email</div>
-                <a href="mailto:sayaniachintan@gmail.com" className="text-sm font-medium hover:text-primary transition-colors">sayaniachintan@gmail.com</a>
+                <a href={`mailto:${email}`} className="text-sm font-medium hover:text-primary transition-colors">{email}</a>
               </div>
             </div>
           </div>
@@ -100,13 +138,23 @@ export default function Profile() {
 
         {/* Doctor */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-bg-card border border-border-color rounded-2xl p-6 lg:col-span-2">
-          <h3 className="font-semibold text-lg mb-4">Lead Dentist</h3>
+          <h3 className="font-semibold text-lg mb-4">{clinic.doctorName}</h3>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary/15 text-primary font-bold text-xl flex items-center justify-center">CS</div>
+            {clinic.doctorImage ? (
+              <img src={clinic.doctorImage} alt={clinic.doctorName} className="w-14 h-14 rounded-2xl object-cover object-top shadow-sm border border-border-color" />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl bg-primary/15 text-primary font-bold text-xl flex items-center justify-center">
+                {clinic.doctorName ? clinic.doctorName.split(' ').map(n => n[0]).join('') : 'D'}
+              </div>
+            )}
             <div>
               <div className="font-bold text-lg">{clinic.doctorName}</div>
-              <div className="text-sm text-primary font-medium">B.D.S. | Dental Surgeon & Consultant</div>
-              <div className="text-xs text-text-muted mt-1">10+ years of experience • 5,000+ patients treated</div>
+              <div className="text-sm text-primary font-medium">
+                {activeClinicId === 'janki' ? 'B.D.S. | Lead Dentist & Consultant' : 'B.D.S. | Dental Surgeon & Consultant'}
+              </div>
+              <div className="text-xs text-text-muted mt-1">
+                {activeClinicId === 'janki' ? '12+ years of experience • 5,000+ patients treated' : '10+ years of experience • 5,000+ patients treated'}
+              </div>
             </div>
           </div>
         </motion.div>
